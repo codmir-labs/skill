@@ -8,7 +8,7 @@
 
 ## What is Codmir?
 
-Codmir is an AI-powered error tracking and monitoring platform. The `@codmir/sdk` package captures errors, tracks performance, monitors AI API calls (OpenAI, Anthropic, etc.), and sends telemetry to the Codmir Overseer. It provides framework-specific integrations for Next.js, Express, Remix, React Native, browser-only apps, and serverless platforms.
+Codmir is an AI-powered error tracking and monitoring platform. The `@codmir/sdk` package captures errors, tracks performance, monitors AI API calls (OpenAI, Anthropic, etc.), and sends telemetry to Codmir. It provides framework-specific integrations for Next.js, Express, Remix, React Native, browser-only apps, and serverless platforms.
 
 Key capabilities:
 - **Error tracking** with stack traces, breadcrumbs, and user context
@@ -21,8 +21,7 @@ Key capabilities:
 
 - Node.js >= 18
 - A Codmir account and project (sign up at [codmir.com/get-started](https://codmir.com/get-started))
-- Your project's DSN (Data Source Name), found in **Project Settings > SDK Setup** in the Codmir dashboard
-- The DSN format is: `https://<your-project>.codmir.com/api/overseer`
+- Your project's **Client Key** and **Secret Key**, found in **Project Settings > SDK Setup** in the Codmir dashboard
 
 ## Installation
 
@@ -53,7 +52,7 @@ import * as Codmir from '@codmir/sdk/nextjs';
 
 export function register() {
   Codmir.init({
-    dsn: process.env.NEXT_PUBLIC_CODMIR_DSN,
+    clientKey: process.env.NEXT_PUBLIC_CODMIR_CLIENT_KEY,
     environment: process.env.NODE_ENV,
     tracesSampleRate: 1.0,        // Capture 100% of transactions (reduce in production)
     replaysSessionSampleRate: 0.1, // Capture 10% of sessions for replay
@@ -142,10 +141,11 @@ module.exports = nextConfig;
 **Step 5: Add environment variables to `.env.local`**
 
 ```env
-NEXT_PUBLIC_CODMIR_DSN=https://your-project.codmir.com/api/overseer
+NEXT_PUBLIC_CODMIR_CLIENT_KEY=your_client_key_here
+CODMIR_SECRET_KEY=your_secret_key_here
 ```
 
-> **Important**: Use `NEXT_PUBLIC_` prefix so the DSN is available on both server and client sides.
+> **Important**: Use `NEXT_PUBLIC_` prefix for the client key so it is available on both server and client sides. The secret key should NOT use the `NEXT_PUBLIC_` prefix.
 
 ---
 
@@ -159,10 +159,9 @@ For Next.js projects using the Pages Router (no `app/` directory).
 // pages/_app.tsx
 import type { AppProps } from 'next/app';
 import * as Codmir from '@codmir/sdk/nextjs';
-import { useEffect } from 'react';
 
 Codmir.init({
-  dsn: process.env.NEXT_PUBLIC_CODMIR_DSN,
+  clientKey: process.env.NEXT_PUBLIC_CODMIR_CLIENT_KEY,
   environment: process.env.NODE_ENV,
 });
 
@@ -206,7 +205,8 @@ export default ErrorPage;
 **Step 3: Add environment variables to `.env.local`**
 
 ```env
-NEXT_PUBLIC_CODMIR_DSN=https://your-project.codmir.com/api/overseer
+NEXT_PUBLIC_CODMIR_CLIENT_KEY=your_client_key_here
+CODMIR_SECRET_KEY=your_secret_key_here
 ```
 
 ---
@@ -232,7 +232,8 @@ import * as Codmir from '@codmir/sdk/express';
 
 // Initialize Codmir BEFORE creating the app
 Codmir.init({
-  dsn: process.env.CODMIR_DSN,
+  clientKey: process.env.CODMIR_CLIENT_KEY,
+  secretKey: process.env.CODMIR_SECRET_KEY,
   environment: process.env.NODE_ENV,
   extractUser: (req) => ({
     id: req.user?.id as string,
@@ -271,7 +272,8 @@ app.listen(3000, () => {
 **Step 3: Add environment variables**
 
 ```env
-CODMIR_DSN=https://your-project.codmir.com/api/overseer
+CODMIR_CLIENT_KEY=your_client_key_here
+CODMIR_SECRET_KEY=your_secret_key_here
 ```
 
 ---
@@ -291,7 +293,8 @@ import { RemixServer } from '@remix-run/react';
 import type { EntryContext } from '@remix-run/node';
 
 Codmir.init({
-  dsn: process.env.CODMIR_DSN,
+  clientKey: process.env.CODMIR_CLIENT_KEY,
+  secretKey: process.env.CODMIR_SECRET_KEY,
   environment: process.env.NODE_ENV,
   tracesSampleRate: 1.0,
 });
@@ -354,7 +357,8 @@ export function ErrorBoundary() {
 **Step 4: Add environment variables**
 
 ```env
-CODMIR_DSN=https://your-project.codmir.com/api/overseer
+CODMIR_CLIENT_KEY=your_client_key_here
+CODMIR_SECRET_KEY=your_secret_key_here
 ```
 
 ---
@@ -376,7 +380,7 @@ npm install @codmir/sdk
 import * as Codmir from '@codmir/sdk/react-native';
 
 Codmir.init({
-  dsn: 'https://your-project.codmir.com/api/overseer',
+  clientKey: 'your_client_key_here',
   environment: __DEV__ ? 'development' : 'production',
   captureNativeCrashes: true,
   trackScreenViews: true,
@@ -432,7 +436,7 @@ try {
 }
 ```
 
-> **Note**: The DSN is hardcoded in React Native since there is no `.env` file by default. Use `react-native-config` or similar for environment-based configuration.
+> **Note**: In React Native there is no `.env` file by default. Use `react-native-config` or similar for environment-based configuration instead of hardcoding the client key.
 
 ---
 
@@ -448,7 +452,7 @@ Lightweight integration for browser-only applications without a framework.
   import { init, captureException, captureMessage } from '@codmir/sdk/browser';
 
   init({
-    dsn: 'https://your-project.codmir.com/api/overseer',
+    clientKey: 'your_client_key_here',
     environment: 'production',
     captureGlobalErrors: true,
     captureUnhandledRejections: true,
@@ -468,8 +472,8 @@ Lightweight integration for browser-only applications without a framework.
 import * as Codmir from '@codmir/sdk/browser';
 
 Codmir.init({
-  dsn: import.meta.env.VITE_CODMIR_DSN, // Vite
-  // or: process.env.REACT_APP_CODMIR_DSN // Create React App
+  clientKey: import.meta.env.VITE_CODMIR_CLIENT_KEY, // Vite
+  // or: process.env.REACT_APP_CODMIR_CLIENT_KEY      // Create React App
   environment: import.meta.env.MODE,
   captureGlobalErrors: true,
   captureUnhandledRejections: true,
@@ -483,7 +487,7 @@ Codmir.init({
 <script src="https://cdn.codmir.com/sdk/browser/latest.min.js"></script>
 <script>
   CodmirBrowser.init({
-    dsn: 'https://your-project.codmir.com/api/overseer',
+    clientKey: 'your_client_key_here',
   });
 </script>
 ```
@@ -492,10 +496,10 @@ Codmir.init({
 
 ```env
 # Vite
-VITE_CODMIR_DSN=https://your-project.codmir.com/api/overseer
+VITE_CODMIR_CLIENT_KEY=your_client_key_here
 
 # Create React App
-REACT_APP_CODMIR_DSN=https://your-project.codmir.com/api/overseer
+REACT_APP_CODMIR_CLIENT_KEY=your_client_key_here
 ```
 
 ---
@@ -560,23 +564,11 @@ export default {
 };
 ```
 
-**General serverless wrapper pattern**
+**Environment variables**
 
-```typescript
-import { createApp, createFunction } from '@codmir/sdk/serverless';
-
-const app = createApp({ name: 'my-service' });
-
-const myFunction = createFunction(app, {
-  cpu: 2,
-  memory: '4GB',
-  timeout: 300,
-});
-
-const handler = myFunction(async (input: string) => {
-  // Your computation logic
-  return processedResult;
-});
+```env
+CODMIR_CLIENT_KEY=your_client_key_here
+CODMIR_SECRET_KEY=your_secret_key_here
 ```
 
 ---
@@ -594,7 +586,8 @@ import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 
 CodmirAI.init({
-  dsn: process.env.CODMIR_DSN,
+  clientKey: process.env.CODMIR_CLIENT_KEY,
+  secretKey: process.env.CODMIR_SECRET_KEY,
   environment: process.env.NODE_ENV,
   trackTokenUsage: true,
   trackCosts: true,
@@ -666,7 +659,8 @@ console.log(summary);
 **Step 5: Add environment variables**
 
 ```env
-CODMIR_DSN=https://your-project.codmir.com/api/overseer
+CODMIR_CLIENT_KEY=your_client_key_here
+CODMIR_SECRET_KEY=your_secret_key_here
 OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
 ```
@@ -679,7 +673,7 @@ All framework integrations re-export these core functions:
 
 | Function | Description |
 |---|---|
-| `init(config)` | Initialize the SDK with your DSN and options |
+| `init(config)` | Initialize the SDK with your client key and options |
 | `captureException(error, context?)` | Manually capture an error |
 | `captureMessage(message, level?)` | Send a custom message event |
 | `setUser(user)` | Set user context (id, email, username) |
@@ -689,22 +683,23 @@ All framework integrations re-export these core functions:
 | `flush(timeout?)` | Flush pending events (use before process exit) |
 | `close(timeout?)` | Flush and disable the SDK |
 
-### OverseerConfig (shared config for all frameworks)
+### SDK Config (shared config for all frameworks)
 
 ```typescript
 {
-  dsn?: string;                        // Your project's Data Source Name
-  environment?: string;                // 'production' | 'staging' | 'development'
-  release?: string;                    // Your app's version/release identifier
-  enabled?: boolean;                   // Enable/disable the SDK (default: true)
-  debug?: boolean;                     // Enable debug logging (default: false)
-  sampleRate?: number;                 // Error sample rate 0-1 (default: 1.0)
-  tracesSampleRate?: number;           // Performance trace sample rate 0-1
-  replaysSessionSampleRate?: number;   // Session replay sample rate 0-1
-  replaysOnErrorSampleRate?: number;   // Replay-on-error sample rate 0-1
-  beforeSend?: (event) => event|null;  // Hook to modify/filter events
-  initialUser?: UserContext;           // Pre-set user context
-  initialTags?: Record<string, string>;// Pre-set tags
+  clientKey?: string;                    // Your project's client key
+  secretKey?: string;                    // Your project's secret key (server-side only)
+  environment?: string;                  // 'production' | 'staging' | 'development'
+  release?: string;                      // Your app's version/release identifier
+  enabled?: boolean;                     // Enable/disable the SDK (default: true)
+  debug?: boolean;                       // Enable debug logging (default: false)
+  sampleRate?: number;                   // Error sample rate 0-1 (default: 1.0)
+  tracesSampleRate?: number;             // Performance trace sample rate 0-1
+  replaysSessionSampleRate?: number;     // Session replay sample rate 0-1
+  replaysOnErrorSampleRate?: number;     // Replay-on-error sample rate 0-1
+  beforeSend?: (event) => event|null;    // Hook to modify/filter events
+  initialUser?: UserContext;             // Pre-set user context
+  initialTags?: Record<string, string>;  // Pre-set tags
 }
 ```
 
@@ -712,40 +707,56 @@ All framework integrations re-export these core functions:
 
 ## Verification
 
-After completing the setup for your framework, verify the integration is working:
+After completing the setup for your framework, verify the integration is working.
 
-### 1. Check the Dashboard
+### Using the verify module
 
-Navigate to your project in the Codmir dashboard. You should see:
-- **"Connected"** status in **Project Settings > SDK Status**
-- A test event if you sent one
+The SDK includes a built-in verification module that sends a test event and confirms the round-trip:
 
-### 2. Send a Test Event
+```typescript
+import { verify, printVerifyResult } from '@codmir/sdk/verify';
+
+const result = await verify({
+  clientKey: process.env.NEXT_PUBLIC_CODMIR_CLIENT_KEY,
+  onProgress: (step) => console.log(`[${step.status}] ${step.message}`),
+});
+
+console.log(printVerifyResult(result));
+```
+
+Or use the one-liner:
+
+```typescript
+import { quickVerify } from '@codmir/sdk/verify';
+
+const connected = await quickVerify(process.env.NEXT_PUBLIC_CODMIR_CLIENT_KEY);
+console.log(connected ? 'Connected!' : 'Failed to connect');
+```
+
+### Manual verification
+
+**1. Send a test event**
 
 ```typescript
 import * as Codmir from '@codmir/sdk/nextjs'; // or your platform-specific import
 
-Codmir.init({ dsn: 'YOUR_DSN' });
-
-// Send a test message
 Codmir.captureMessage('SDK setup complete', 'info');
-
-// Test error capture
-try {
-  throw new Error('Test error from Codmir SDK');
-} catch (error) {
-  Codmir.captureException(error);
-}
 
 // Flush to ensure events are sent before the process exits
 await Codmir.flush(5000);
 ```
 
-### 3. Verify in Production
+**2. Check the dashboard**
+
+Navigate to your project in the Codmir dashboard. You should see:
+- **"Connected"** status in **Project Settings > SDK Status**
+- The test event in the events list
+
+**3. Verify in production**
 
 - Deploy your application with the SDK configured
 - Trigger a test error (e.g., visit a route that throws)
-- Check the Codmir dashboard for the captured event within 30 seconds
+- Check the Codmir dashboard for the captured event within 60 seconds
 
 ---
 
@@ -756,10 +767,12 @@ await Codmir.flush(5000);
 ```typescript
 // instrumentation.ts
 import * as Codmir from '@codmir/sdk/nextjs';
+import { quickVerify } from '@codmir/sdk/verify';
 
-export function register() {
-  Codmir.init({ dsn: process.env.NEXT_PUBLIC_CODMIR_DSN });
-  Codmir.captureMessage('SDK setup complete', 'info');
+export async function register() {
+  Codmir.init({ clientKey: process.env.NEXT_PUBLIC_CODMIR_CLIENT_KEY });
+  const ok = await quickVerify(process.env.NEXT_PUBLIC_CODMIR_CLIENT_KEY!);
+  console.log(ok ? 'Codmir connected!' : 'Codmir connection failed');
 }
 ```
 
@@ -767,15 +780,19 @@ export function register() {
 
 ```typescript
 import * as Codmir from '@codmir/sdk/express';
-Codmir.init({ dsn: process.env.CODMIR_DSN });
-Codmir.captureMessage('Express SDK setup complete', 'info');
+import { quickVerify } from '@codmir/sdk/verify';
+
+Codmir.init({ clientKey: process.env.CODMIR_CLIENT_KEY });
+quickVerify(process.env.CODMIR_CLIENT_KEY!).then(ok =>
+  console.log(ok ? 'Codmir connected!' : 'Codmir connection failed')
+);
 ```
 
 ### React Native
 
 ```typescript
 import * as Codmir from '@codmir/sdk/react-native';
-Codmir.init({ dsn: 'https://your-project.codmir.com/api/overseer' });
+Codmir.init({ clientKey: 'your_client_key_here' });
 Codmir.captureMessage('React Native SDK setup complete', 'info');
 ```
 
@@ -783,7 +800,7 @@ Codmir.captureMessage('React Native SDK setup complete', 'info');
 
 ```typescript
 import * as Codmir from '@codmir/sdk/browser';
-Codmir.init({ dsn: 'https://your-project.codmir.com/api/overseer' });
+Codmir.init({ clientKey: 'your_client_key_here' });
 Codmir.captureMessage('Browser SDK setup complete', 'info');
 ```
 
@@ -793,10 +810,9 @@ Codmir.captureMessage('Browser SDK setup complete', 'info');
 
 | Problem | Cause | Solution |
 |---|---|---|
-| "DSN not found" or undefined DSN | Environment variable not set or wrong name | Check `.env.local` has `NEXT_PUBLIC_CODMIR_DSN` (Next.js) or `CODMIR_DSN` (server-side). Restart the dev server after adding env vars. |
-| "Unauthorized" error | Invalid or expired project DSN | Go to **Project Settings > SDK Setup** in the Codmir dashboard and copy the current DSN. |
+| "Unauthorized" error | Invalid or expired client key | Go to **Project Settings > SDK Setup** in the Codmir dashboard and regenerate your keys. |
 | No events appearing in dashboard | Events not flushed before process exits | Call `await Codmir.flush(5000)` before the process exits, especially in serverless/CLI contexts. |
-| Events appearing in wrong project | Wrong DSN configured | Verify the DSN matches the project you are viewing in the dashboard. |
+| Events appearing in wrong project | Wrong client key configured | Verify the client key matches the project you are viewing in the dashboard. |
 | Next.js server errors not captured | Missing `instrumentation.ts` | Create `instrumentation.ts` in the project root and add `instrumentationHook: true` to `next.config.js`. |
 | Next.js client errors not captured | Missing error boundary | Add `app/global-error.tsx` and `app/error.tsx` with `Codmir.captureException(error)`. |
 | Express errors not captured | `errorHandler()` placed before routes | Move `app.use(Codmir.errorHandler())` to AFTER all route definitions. |
@@ -809,17 +825,18 @@ Codmir.captureMessage('Browser SDK setup complete', 'info');
 ## Environment Variables
 
 ```env
-# Required -- your project's Data Source Name
-CODMIR_DSN=https://your-project.codmir.com/api/overseer
+# Required -- your project's API keys
+CODMIR_CLIENT_KEY=your_client_key_here
+CODMIR_SECRET_KEY=your_secret_key_here
 
 # Next.js (must use NEXT_PUBLIC_ prefix for client-side access)
-NEXT_PUBLIC_CODMIR_DSN=https://your-project.codmir.com/api/overseer
+NEXT_PUBLIC_CODMIR_CLIENT_KEY=your_client_key_here
 
 # Vite
-VITE_CODMIR_DSN=https://your-project.codmir.com/api/overseer
+VITE_CODMIR_CLIENT_KEY=your_client_key_here
 
 # Create React App
-REACT_APP_CODMIR_DSN=https://your-project.codmir.com/api/overseer
+REACT_APP_CODMIR_CLIENT_KEY=your_client_key_here
 
 # AI monitoring (provider keys -- only needed if using @codmir/sdk/ai)
 OPENAI_API_KEY=sk-...
@@ -839,7 +856,8 @@ ANTHROPIC_API_KEY=sk-ant-...
 | Browser (vanilla JS) | `@codmir/sdk/browser` |
 | Serverless (Lambda, Workers) | `@codmir/sdk/serverless` |
 | AI Monitoring (OpenAI, Anthropic) | `@codmir/sdk/ai` |
-| Core (direct overseer access) | `@codmir/sdk/overseer` |
+| Verification | `@codmir/sdk/verify` |
+| Core (direct access) | `@codmir/sdk/overseer` |
 | API Client (project management) | `@codmir/sdk` |
 
 ---
