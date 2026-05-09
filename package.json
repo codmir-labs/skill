@@ -1,0 +1,25 @@
+{
+  "name": "@codmir/skill",
+  "version": "0.1.0",
+  "description": "AI-readable instructions for installing and configuring the Codmir SDK",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js", "require": "./dist/index.cjs" },
+    "./instructions": { "types": "./dist/instructions.d.ts", "import": "./dist/instructions.js", "require": "./dist/instructions.cjs" }
+  },
+  "files": ["dist", "README.md", "LICENSE", "SKILL.md"],
+  "scripts": {
+    "build": "tsup src/index.ts src/instructions.ts --format cjs,esm --dts --clean",
+    "prepublishOnly": "pnpm build"
+  },
+  "keywords": ["codmir", "sdk", "skill", "ai", "instructions", "claude", "cursor", "copilot"],
+  "author": "Codmir <hello@codmir.com>",
+  "license": "Apache-2.0",
+  "repository": { "type": "git", "url": "https://github.com/codmir-labs/skill.git" },
+  "bugs": { "url": "https://github.com/codmir-labs/skill/issues" },
+  "homepage": "https://codmir.com/docs/sdk",
+  "devDependencies": { "tsup": "^8.3.0", "typescript": "^5.4.5" },
+  "engines": { "node": ">=18.0.0" }
+}
