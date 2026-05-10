@@ -1,5 +1,5 @@
 {
-  "name": "@codmir/skill",
+  "name": "@codmir/skill-app",
   "version": "0.1.0",
   "description": "AI-readable instructions for installing and configuring the Codmir SDK",
   "type": "module",
