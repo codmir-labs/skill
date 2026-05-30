@@ -1,14 +1,195 @@
-# Codmir SDK Installation Skill
+# Codmir Skill
 
-> AI-readable instructions for installing and configuring the Codmir SDK.
-> This document is designed to be consumed by AI assistants (Claude Code, Cursor, GitHub Copilot, etc.)
-> to accurately set up Codmir error tracking, performance monitoring, and AI observability in any project.
+> AI-readable instructions for installing and configuring Codmir.
+> This document is designed to be consumed by AI assistants (Claude Code, Claude Desktop, Cursor, Windsurf, GitHub Copilot, etc.)
+> to auto-configure Codmir tools and SDK integrations.
 
 ---
 
-## What is Codmir?
+## MCP Server (AI Tool Integration)
 
-Codmir is an AI-powered error tracking and monitoring platform. The `@codmir/sdk` package captures errors, tracks performance, monitors AI API calls (OpenAI, Anthropic, etc.), and sends telemetry to Codmir. It provides framework-specific integrations for Next.js, Express, Remix, React Native, browser-only apps, and serverless platforms.
+The Codmir MCP Server gives AI assistants direct access to project management tools: creating tickets, managing sprints, executing AI tasks, debugging production errors, and controlling the desktop.
+
+**Package:** `@codmir/mcp` ([npm](https://www.npmjs.com/package/@codmir/mcp)) | **Registry:** `com.codmir/mcp` ([MCP Registry](https://registry.modelcontextprotocol.io))
+
+### Claude Code
+
+Add to `.claude/mcp.json` in the project root (or `~/.claude/mcp.json` for global):
+
+```json
+{
+  "mcpServers": {
+    "codmir": {
+      "command": "npx",
+      "args": ["@codmir/mcp"],
+      "env": {
+        "CODMIR_API_TOKEN": "your-token-here",
+        "CODMIR_USER_ID": "your-user-id-here"
+      }
+    }
+  }
+}
+```
+
+If the user has already run `codmir login`, the env block can be omitted -- the server reads credentials from `~/.codmir/credentials.json` automatically.
+
+### Claude Desktop
+
+Add to the Claude Desktop config file:
+
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+- **Linux:** `~/.config/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "codmir": {
+      "command": "npx",
+      "args": ["@codmir/mcp"],
+      "env": {
+        "CODMIR_API_TOKEN": "your-token-here",
+        "CODMIR_USER_ID": "your-user-id-here"
+      }
+    }
+  }
+}
+```
+
+### Windsurf
+
+Add to `.windsurf/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "codmir": {
+      "command": "npx",
+      "args": ["@codmir/mcp"]
+    }
+  }
+}
+```
+
+### Cursor
+
+Add to `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "codmir": {
+      "command": "npx",
+      "args": ["@codmir/mcp"]
+    }
+  }
+}
+```
+
+### VS Code
+
+Add to `.vscode/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "codmir": {
+      "command": "npx",
+      "args": ["@codmir/mcp"]
+    }
+  }
+}
+```
+
+### Authentication
+
+The MCP server loads credentials in this order:
+
+1. `~/.codmir/credentials.json` (created by `codmir login`)
+2. Environment variables: `CODMIR_API_TOKEN`, `CODMIR_USER_ID`, `CODMIR_API_URL`
+
+To authenticate interactively:
+
+```bash
+codmir login
+```
+
+This opens a browser, authenticates via GitHub/Google/Email, and saves a token to `~/.codmir/credentials.json`.
+
+### Available MCP Tools
+
+Once configured, the AI assistant gains these tools:
+
+**Project Management:**
+
+| Tool | Description |
+|------|-------------|
+| `list_todo` | List actionable tickets sorted by priority (open, in_progress, review) |
+| `update_todo_status` | Mark a ticket as done, in-progress, review, or reopen |
+| `create_ticket` | Create a new bug, feature, task, or improvement ticket |
+| `list_project_tasks` | List all tasks for a project |
+| `get_sprint_tasks` | Get tasks for current or specified sprint |
+| `check_task_status` | Check status of a running task execution |
+
+**AI Task Execution:**
+
+| Tool | Description |
+|------|-------------|
+| `execute_task` | Run an AI-powered code task (bug fix, feature, refactor) |
+| `store_conversation` | Save conversation as project documentation |
+| `get_project_context` | Get project overview, tech stack, and activity |
+
+**Error Debugging:**
+
+| Tool | Description |
+|------|-------------|
+| `lookup_error` | Look up a production error by refId, digest, reportId, fingerprint, or issueId |
+| `list_recent_errors` | List recent production errors with severity filtering |
+| `get_error_context` | Get enriched error context with suggested files and AI debugging summary |
+
+**SDK & Workspace:**
+
+| Tool | Description |
+|------|-------------|
+| `get_sdk_reference` | Get Codmir SDK API reference for a topic |
+| `generate_sdk_code` | Generate ready-to-use TypeScript/JavaScript code |
+| `create_organization` | Create a new workspace |
+| `create_project` | Create a project within an organization |
+| `get_workspace_status` | Check workspace setup status |
+
+**Desktop Control** (requires Codmir desktop app running):
+
+| Tool | Description |
+|------|-------------|
+| `codmir_screenshot` | Capture a screenshot of the entire screen |
+| `codmir_click` / `codmir_double_click` / `codmir_right_click` | Click at screen coordinates |
+| `codmir_type` | Type text at the current cursor position |
+| `codmir_key` | Press keyboard keys or key combinations |
+| `codmir_scroll` | Scroll at coordinates |
+| `codmir_mouse_move` | Move the mouse cursor |
+| `codmir_shell` | Run a shell command on the desktop machine |
+| `codmir_screen_info` | Get screen dimensions and frontmost app |
+| `codmir_fetch_page` | Fetch a web page through the desktop agent |
+| `codmir_scan_routes` | Scan multiple routes and return status codes |
+| `codmir_list_directory` | List files and directories at a path |
+| `codmir_connect` / `codmir_disconnect` | Start/end an agent desktop session |
+| `codmir_status` | Check if the desktop agent is running |
+
+### MCP Verification
+
+After configuring, verify the connection:
+
+1. Restart your editor/Claude Desktop
+2. Ask: "What's on my to-do list?" or "Check my workspace status"
+3. The AI should call `list_todo` or `get_workspace_status` and return results
+
+If you get "Not authenticated", run `codmir login` in a terminal.
+
+---
+
+## SDK (Error Tracking & Monitoring)
+
+The `@codmir/sdk` package captures errors, tracks performance, monitors AI API calls (OpenAI, Anthropic, etc.), and sends telemetry to Codmir. It provides framework-specific integrations for Next.js, Express, Remix, React Native, browser-only apps, and serverless platforms.
 
 Key capabilities:
 - **Error tracking** with stack traces, breadcrumbs, and user context
@@ -17,13 +198,13 @@ Key capabilities:
 - **AI monitoring** for tracking LLM token usage, costs, and latency
 - **Serverless execution** for cloud-based compute workloads
 
-## Prerequisites
+### Prerequisites
 
 - Node.js >= 18
 - A Codmir account and project (sign up at [codmir.com/get-started](https://codmir.com/get-started))
 - Your project's **Client Key** and **Secret Key**, found in **Project Settings > SDK Setup** in the Codmir dashboard
 
-## Installation
+### Installation
 
 ```bash
 # npm
