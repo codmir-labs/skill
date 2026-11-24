@@ -193,20 +193,18 @@ If you get "Not authenticated", run `codmir login` in a terminal.
 
 ## SDK (Error Tracking & Monitoring)
 
-The `@codmir/sdk` package captures errors, tracks performance, monitors AI API calls (OpenAI, Anthropic, etc.), and sends telemetry to Codmir. It provides framework-specific integrations for Next.js, Express, Remix, React Native, browser-only apps, and serverless platforms.
+The `@codmir/sdk` package captures errors and messages with breadcrumbs, monitors AI API calls (OpenAI, Anthropic, etc.), and sends the events to Codmir. It provides framework-specific integrations for Next.js, Express, Remix, React Native and browser-only apps, and a runtime for serverless functions. These steps were checked against `@codmir/sdk` 2.0.1, the latest release on npm on 2026-11-23.
 
 Key capabilities:
 - **Error tracking** with stack traces, breadcrumbs, and user context
-- **Performance monitoring** with traces and transaction sampling
-- **Session replay** for reproducing user-facing bugs
-- **AI monitoring** for tracking LLM token usage, costs, and latency
-- **Serverless execution** for cloud-based compute workloads
+- **AI monitoring** for tracking LLM token usage, estimated costs, and latency
+- **Serverless functions** that wrap a handler and run it with `local()`
 
 ### Prerequisites
 
 - Node.js >= 18
 - A Codmir account and project (sign up at [codmir.com/get-started](https://codmir.com/get-started))
-- Your project's **Client Key** and **Secret Key**, found in **Project Settings > SDK Setup** in the Codmir dashboard
+- Your project's **Client Key**, found in **Project Settings > SDK Setup** in the Codmir dashboard. The SDK sends it with every event, in the `x-overseer-key` header. 2.0.1 does not use a **Secret Key**, so no step below sets one.
 
 ### Installation
 
@@ -221,95 +219,53 @@ pnpm add @codmir/sdk
 yarn add @codmir/sdk
 ```
 
+**TypeScript**: 2.0.1 ships no type declarations, although its `package.json` names them, so with `strict` on, `tsc` stops at each import with `TS7016: Could not find a declaration file`. Add a declaration file that your `tsconfig.json` includes:
+
+```typescript
+// codmir-sdk.d.ts
+declare module '@codmir/sdk/*';
+```
+
+> **Browser bundles**: every error-tracking entry of 2.0.1 (`/nextjs`, `/express`, `/remix`, `/react-native`, `/browser`, `/ai`, `/verify` and `/overseer`) imports Node's `events`, `crypto`, `fs`, `os` and `path` modules, through a chunk it shares with the package's agent code. Code that runs in Node is not affected. A build for the browser stops at these imports unless it supplies them: `vite build` (Vite 6.4.1) and `remix vite:build` (Remix 2.17.5) fail with `"EventEmitter" is not exported by "__vite-browser-external"`, `next build` (Next.js 15.5.29) with `Module not found: Can't resolve 'fs'`, and esbuild with `--platform=browser` with `Could not resolve "events"`.
+
 ---
 
 ## Framework-Specific Setup
 
-### Next.js (App Router) -- Recommended for Next.js 14+
+### Next.js (App Router) -- Recommended for Next.js 15+
 
-The Next.js App Router integration captures server-side errors, client-side exceptions, route transitions, and optionally enables session replay.
+The Next.js App Router integration captures server-side request errors through `instrumentation.ts`. Next.js calls its `onRequestError` from version 15 on: on Next.js 14.2.35, an error thrown while a page rendered on the server sent nothing.
 
 **Step 1: Create `instrumentation.ts` in your project root (next to `next.config.js`)**
 
 ```typescript
 // instrumentation.ts
-import * as Codmir from '@codmir/sdk/nextjs';
-
-export function register() {
-  Codmir.init({
-    clientKey: process.env.NEXT_PUBLIC_CODMIR_CLIENT_KEY,
-    environment: process.env.NODE_ENV,
-    tracesSampleRate: 1.0,        // Capture 100% of transactions (reduce in production)
-    replaysSessionSampleRate: 0.1, // Capture 10% of sessions for replay
-    replaysOnErrorSampleRate: 1.0, // Always capture replay when an error occurs
-  });
+// Next.js also builds this file for the Edge runtime (for middleware, for example), where
+// 2.0.1 cannot load: import the SDK only when the server runs on Node.js
+export async function register() {
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    const Codmir = await import('@codmir/sdk/nextjs');
+    Codmir.init({
+      clientKey: process.env.NEXT_PUBLIC_CODMIR_CLIENT_KEY,
+      environment: process.env.NODE_ENV,
+    });
+  }
 }
 
-// Capture server-side request errors automatically
-export const onRequestError = Codmir.captureRouterError;
-```
-
-**Step 2: Create a global error boundary at `app/global-error.tsx`**
-
-```tsx
-// app/global-error.tsx
-'use client';
-
-import * as Codmir from '@codmir/sdk/nextjs';
-import { useEffect } from 'react';
-
-export default function GlobalError({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
-  useEffect(() => {
-    Codmir.captureException(error);
-  }, [error]);
-
-  return (
-    <html>
-      <body>
-        <h2>Something went wrong!</h2>
-        <button onClick={() => reset()}>Try again</button>
-      </body>
-    </html>
-  );
+// Capture server-side request errors automatically (Next.js 15 and later call this)
+export async function onRequestError(error: unknown, request: unknown, context: unknown) {
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    const Codmir = await import('@codmir/sdk/nextjs');
+    await Codmir.captureRouterError(error, request, context);
+  }
 }
 ```
 
-**Step 3: Add route-level error boundaries at `app/error.tsx`**
+**Step 2: Keep `@codmir/sdk` out of client components**
 
-```tsx
-// app/error.tsx
-'use client';
+On 2.0.1, do not import `@codmir/sdk/nextjs` in a file that runs in the browser, such as an `app/error.tsx` or `app/global-error.tsx` error boundary: `next build` then stops with `Module not found: Can't resolve 'fs'` (see **Browser bundles** under Installation). Step 1 captures the errors that reach Next.js on the server, including one thrown while a Server Component renders; errors thrown in the browser are not captured on 2.0.1.
 
-import * as Codmir from '@codmir/sdk/nextjs';
-import { useEffect } from 'react';
-
-export default function Error({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
-  useEffect(() => {
-    Codmir.captureException(error);
-  }, [error]);
-
-  return (
-    <div>
-      <h2>Something went wrong!</h2>
-      <button onClick={() => reset()}>Try again</button>
-    </div>
-  );
-}
-```
-
-**Step 4: Update `next.config.js` to enable the instrumentation hook**
+**Step 3: On Next.js 14, enable the instrumentation hook in `next.config.js`**
 
 ```javascript
 // next.config.js
@@ -323,14 +279,15 @@ const nextConfig = {
 module.exports = nextConfig;
 ```
 
-**Step 5: Add environment variables to `.env.local`**
+Next.js 15 and later load `instrumentation.ts` without it, and warn that `experimental.instrumentationHook` is no longer needed.
+
+**Step 4: Add environment variables to `.env.local`**
 
 ```env
 NEXT_PUBLIC_CODMIR_CLIENT_KEY=your_client_key_here
-CODMIR_SECRET_KEY=your_secret_key_here
 ```
 
-> **Important**: Use `NEXT_PUBLIC_` prefix for the client key so it is available on both server and client sides. The secret key should NOT use the `NEXT_PUBLIC_` prefix.
+> **Important**: Use `NEXT_PUBLIC_` prefix for the client key so it is available on both server and client sides.
 
 ---
 
@@ -338,60 +295,18 @@ CODMIR_SECRET_KEY=your_secret_key_here
 
 For Next.js projects using the Pages Router (no `app/` directory).
 
-**Step 1: Wrap `_app.tsx` with Codmir initialization**
+**Step 1: Create `instrumentation.ts` in your project root**
 
-```tsx
-// pages/_app.tsx
-import type { AppProps } from 'next/app';
-import * as Codmir from '@codmir/sdk/nextjs';
+Use the file from Next.js (App Router), Step 1, and on Next.js 14 its Step 3 as well. Its `onRequestError` receives Pages Router errors too: on Next.js 15.5.29, an error thrown in `getServerSideProps` was sent with `routerKind: 'Pages Router'`.
 
-Codmir.init({
-  clientKey: process.env.NEXT_PUBLIC_CODMIR_CLIENT_KEY,
-  environment: process.env.NODE_ENV,
-});
+**Step 2: Keep `@codmir/sdk` out of `_app.tsx` and `_error.tsx`**
 
-export default function App({ Component, pageProps }: AppProps) {
-  return <Component {...pageProps} />;
-}
-```
-
-**Step 2: Add error reporting in `_error.tsx`**
-
-```tsx
-// pages/_error.tsx
-import * as Codmir from '@codmir/sdk/nextjs';
-import type { NextPageContext } from 'next';
-
-function ErrorPage({ statusCode }: { statusCode: number }) {
-  return (
-    <p>
-      {statusCode
-        ? `A ${statusCode} error occurred on the server`
-        : 'An error occurred on the client'}
-    </p>
-  );
-}
-
-ErrorPage.getInitialProps = async (ctx: NextPageContext) => {
-  const { res, err } = ctx;
-  const statusCode = res ? res.statusCode : err ? err.statusCode : 404;
-
-  if (err) {
-    Codmir.captureException(err);
-    await Codmir.flush(2000);
-  }
-
-  return { statusCode };
-};
-
-export default ErrorPage;
-```
+Next.js bundles `pages/_app.tsx` and `pages/_error.tsx` for the browser as well, so on 2.0.1 an import of `@codmir/sdk/nextjs` in either one stops `next build` with `Module not found: Can't resolve 'fs'` (see **Browser bundles** under Installation).
 
 **Step 3: Add environment variables to `.env.local`**
 
 ```env
 NEXT_PUBLIC_CODMIR_CLIENT_KEY=your_client_key_here
-CODMIR_SECRET_KEY=your_secret_key_here
 ```
 
 ---
@@ -418,7 +333,6 @@ import * as Codmir from '@codmir/sdk/express';
 // Initialize Codmir BEFORE creating the app
 Codmir.init({
   clientKey: process.env.CODMIR_CLIENT_KEY,
-  secretKey: process.env.CODMIR_SECRET_KEY,
   environment: process.env.NODE_ENV,
   extractUser: (req) => ({
     id: req.user?.id as string,
@@ -431,7 +345,7 @@ const app = express();
 // 1. Codmir request handler -- MUST be the first middleware
 app.use(Codmir.requestHandler());
 
-// 2. Codmir tracing handler (optional, for performance monitoring)
+// 2. Codmir tracing handler (optional: records each response's status and duration as a breadcrumb)
 app.use(Codmir.tracingHandler());
 
 // 3. Your other middleware
@@ -458,14 +372,13 @@ app.listen(3000, () => {
 
 ```env
 CODMIR_CLIENT_KEY=your_client_key_here
-CODMIR_SECRET_KEY=your_secret_key_here
 ```
 
 ---
 
 ### Remix
 
-The Remix integration captures server-side loader/action errors, client-side exceptions, and provides wrappers for route loaders and actions.
+The Remix integration captures server-side errors through `handleError` and the loader and action wrappers.
 
 **Step 1: Initialize in `entry.server.tsx`**
 
@@ -479,9 +392,7 @@ import type { EntryContext } from '@remix-run/node';
 
 Codmir.init({
   clientKey: process.env.CODMIR_CLIENT_KEY,
-  secretKey: process.env.CODMIR_SECRET_KEY,
   environment: process.env.NODE_ENV,
-  tracesSampleRate: 1.0,
 });
 
 // Export error handler for Remix to call on server errors
@@ -516,41 +427,23 @@ export const action = wrapAction(async ({ request }) => {
 });
 ```
 
-**Step 3: Add a client-side error boundary in `root.tsx`**
+**Step 3: Keep `@codmir/sdk` out of `root.tsx`**
 
-```tsx
-// app/root.tsx
-import * as Codmir from '@codmir/sdk/remix';
-
-export function ErrorBoundary() {
-  const error = useRouteError();
-
-  if (error instanceof Error) {
-    Codmir.captureException(error);
-  }
-
-  return (
-    <html>
-      <body>
-        <h1>Something went wrong</h1>
-      </body>
-    </html>
-  );
-}
-```
+Remix bundles `app/root.tsx` for the browser as well, so on 2.0.1 an `ErrorBoundary` there that calls `Codmir.captureException` stops `remix vite:build` with `"EventEmitter" is not exported by "__vite-browser-external"` (see **Browser bundles** under Installation). Errors on the server reach Codmir through `handleError` (Step 1). The route files of Step 2 are not affected: Remix drops `loader` and `action`, and the imports only they use, from the browser build.
 
 **Step 4: Add environment variables**
 
 ```env
 CODMIR_CLIENT_KEY=your_client_key_here
-CODMIR_SECRET_KEY=your_secret_key_here
 ```
 
 ---
 
 ### React Native
 
-The React Native integration captures JavaScript exceptions, native crashes (optional), and tracks screen views.
+The React Native entry has `init`, which starts the client and then installs a global handler for JavaScript errors, `createErrorBoundary`, which builds an error boundary for your component tree, and `addBreadcrumb` for the navigation breadcrumbs you add.
+
+> **Warning**: On 2.0.1, `init` throws a `TypeError` in a React Native app before it captures anything. It reads `window.location.origin` to build its default endpoint, even when you pass a `dsn`, and React Native makes `window` the global object without a `location`. Run `npm view @codmir/sdk version` first; if it prints 2.0.1, tell the user this setup does not run on it yet.
 
 **Step 1: Install the SDK**
 
@@ -562,23 +455,27 @@ npm install @codmir/sdk
 
 ```tsx
 // App.tsx
+import React from 'react';
+import { Text, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
 import * as Codmir from '@codmir/sdk/react-native';
 
 Codmir.init({
+  dsn: 'https://codmir.com/api/overseer',
   clientKey: 'your_client_key_here',
   environment: __DEV__ ? 'development' : 'production',
-  captureNativeCrashes: true,
-  trackScreenViews: true,
-  trackAppState: true,
 });
+
+// createErrorBoundary builds the error boundary class from your React
+const ErrorBoundary = Codmir.createErrorBoundary(React);
 
 export default function App() {
   return (
-    <Codmir.ErrorBoundary fallback={<ErrorFallbackScreen />}>
+    <ErrorBoundary fallback={<ErrorFallbackScreen />}>
       <NavigationContainer>
         <YourApp />
       </NavigationContainer>
-    </Codmir.ErrorBoundary>
+    </ErrorBoundary>
   );
 }
 
@@ -627,7 +524,9 @@ try {
 
 ### Browser (Vanilla JS / TypeScript)
 
-Lightweight integration for browser-only applications without a framework.
+Integration for browser-only applications without a framework. Pass a `dsn` to `init`: with a client key and no `dsn`, 2.0.1 sends events to `/api/overseer/ingest` on the page's own origin instead of to Codmir.
+
+> **Warning**: On 2.0.1 a browser bundle of this entry fails: see **Browser bundles** under Installation. Run `npm view @codmir/sdk version` first; if it prints 2.0.1, tell the user the browser setup does not build on it yet.
 
 **Option A: ES Module import**
 
@@ -637,6 +536,7 @@ Lightweight integration for browser-only applications without a framework.
   import { init, captureException, captureMessage } from '@codmir/sdk/browser';
 
   init({
+    dsn: 'https://codmir.com/api/overseer',
     clientKey: 'your_client_key_here',
     environment: 'production',
     captureGlobalErrors: true,
@@ -657,6 +557,7 @@ Lightweight integration for browser-only applications without a framework.
 import * as Codmir from '@codmir/sdk/browser';
 
 Codmir.init({
+  dsn: 'https://codmir.com/api/overseer',
   clientKey: import.meta.env.VITE_CODMIR_CLIENT_KEY, // Vite
   // or: process.env.REACT_APP_CODMIR_CLIENT_KEY      // Create React App
   environment: import.meta.env.MODE,
@@ -667,15 +568,7 @@ Codmir.init({
 
 **Option C: Script tag (CDN)**
 
-```html
-<!-- Load from CDN (once published) -->
-<script src="https://cdn.codmir.com/sdk/browser/latest.min.js"></script>
-<script>
-  CodmirBrowser.init({
-    clientKey: 'your_client_key_here',
-  });
-</script>
-```
+2.0.1 has no build for a script tag: `cdn.codmir.com` does not resolve, and no file in the package defines a `CodmirBrowser` global. Options A and B are the only ways to load it, and the warning above applies to both.
 
 **Environment variables (for bundled apps)**
 
@@ -691,17 +584,23 @@ REACT_APP_CODMIR_CLIENT_KEY=your_client_key_here
 
 ### Serverless (AWS Lambda / Cloudflare Workers)
 
-The serverless integration wraps your handler function to capture errors and flush events before the function exits.
+`@codmir/sdk/serverless` turns a handler into a Codmir function. In 2.0.1 it captures no errors and sends no events: `local()` runs the handler in the same process, and `remote()` posts the call to the Codmir API at `CODMIR_API_URL` (default `https://codmir.com`) with `CODMIR_API_KEY`. No 2.0.1 function uploads the handler's code (`deploy()` only logs), so these examples call `local()`, and the Lambda example reports errors with `@codmir/sdk/overseer`.
 
 **AWS Lambda**
 
 ```typescript
 // handler.ts
-import { codmir, fn } from '@codmir/sdk/serverless';
+import { app, fn } from '@codmir/sdk/serverless';
+import * as Codmir from '@codmir/sdk/overseer';
 
-const app = codmir.App({ name: 'my-lambda-service' });
+Codmir.init({
+  clientKey: process.env.CODMIR_CLIENT_KEY,
+  environment: process.env.NODE_ENV,
+});
 
-const processEvent = fn(app, {
+const service = app({ name: 'my-lambda-service' });
+
+const processEvent = fn(service, {
   cpu: 1,
   memory: '512MB',
   timeout: 30,
@@ -714,22 +613,28 @@ const processEvent = fn(app, {
   };
 });
 
-// For local development
-export const handler = processEvent.local;
-
-// For cloud execution
-export const cloudHandler = processEvent.remote;
+// local() reads `this`: call it on processEvent, never detached
+export const handler = async (event: AWSLambdaEvent) => {
+  try {
+    return await processEvent.local(event);
+  } catch (error) {
+    Codmir.captureException(error);
+    throw error;
+  } finally {
+    await Codmir.flush(); // send queued events before the handler returns
+  }
+};
 ```
 
 **Cloudflare Workers**
 
 ```typescript
 // src/index.ts
-import { codmir, fn } from '@codmir/sdk/serverless';
+import { app, fn } from '@codmir/sdk/serverless';
 
-const app = codmir.App({ name: 'my-worker' });
+const worker = app({ name: 'my-worker' });
 
-const handleRequest = fn(app, {
+const handleRequest = fn(worker, {
   cpu: 1,
   memory: '128MB',
   timeout: 30,
@@ -749,18 +654,20 @@ export default {
 };
 ```
 
+This Worker sends nothing to Codmir: `@codmir/sdk/serverless` captures no errors.
+
 **Environment variables**
 
 ```env
+# Read by @codmir/sdk/overseer in the Lambda example
 CODMIR_CLIENT_KEY=your_client_key_here
-CODMIR_SECRET_KEY=your_secret_key_here
 ```
 
 ---
 
 ### AI Monitoring (OpenAI / Anthropic)
 
-The AI monitoring integration wraps LLM client libraries to automatically track token usage, costs, latency, and errors.
+The AI monitoring integration wraps LLM client libraries to automatically track token usage, estimated costs, latency, and errors.
 
 **Step 1: Initialize AI monitoring**
 
@@ -772,12 +679,11 @@ import Anthropic from '@anthropic-ai/sdk';
 
 CodmirAI.init({
   clientKey: process.env.CODMIR_CLIENT_KEY,
-  secretKey: process.env.CODMIR_SECRET_KEY,
   environment: process.env.NODE_ENV,
   trackTokenUsage: true,
   trackCosts: true,
   trackLatency: true,
-  capturePrompts: false,    // Set true to capture prompts (privacy-sensitive)
+  capturePrompts: false,    // Set true to add each call's model, message count, temperature and max tokens to its breadcrumb (not the messages)
   captureResponses: false,  // Set true to capture responses (privacy-sensitive)
   redactPatterns: [
     /sk-[a-zA-Z0-9]+/g,       // Redact OpenAI API keys
@@ -812,13 +718,17 @@ const message = await anthropic.messages.create({
 });
 ```
 
+> **Note**: In 2.0.1 a successful call is recorded in this process and as a breadcrumb on later events; only a failed call is sent to Codmir, as an error event.
+
 **Step 3: Track custom AI providers**
 
 ```typescript
-// For providers without a dedicated wrapper, use the generic tracker
+// For providers without a dedicated wrapper, use the generic tracker.
+// It reads token counts from the result's `usage` (input_tokens and output_tokens,
+// or prompt_tokens and completion_tokens).
 const result = await CodmirAI.trackAICall(
   'custom-provider',
-  { model: 'my-model', inputTokens: 100 },
+  { model: 'my-model' },
   async () => {
     return await myCustomProvider.generate('Hello');
   }
@@ -832,12 +742,13 @@ const result = await CodmirAI.trackAICall(
 const summary = CodmirAI.getAIUsageSummary();
 console.log(summary);
 // {
-//   totalTokens: 15420,
+//   totalCalls: 42,
+//   totalInputTokens: 9800,
+//   totalOutputTokens: 5620,
 //   totalCost: 0.23,
-//   callCount: 42,
-//   errorCount: 1,
 //   avgLatencyMs: 850,
-//   byModel: { 'gpt-4o': { tokens: 10000, cost: 0.15 }, ... }
+//   byProvider: { openai: { calls: 30, inputTokens: 7000, outputTokens: 4000, cost: 0.15, avgLatencyMs: 800, errors: 1 }, ... },
+//   byModel: { 'gpt-4o': { calls: 30, inputTokens: 7000, outputTokens: 4000, cost: 0.15, avgLatencyMs: 800, errors: 1 }, ... }
 // }
 ```
 
@@ -845,7 +756,6 @@ console.log(summary);
 
 ```env
 CODMIR_CLIENT_KEY=your_client_key_here
-CODMIR_SECRET_KEY=your_secret_key_here
 OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
 ```
@@ -854,7 +764,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 ## Core SDK API Reference
 
-All framework integrations re-export these core functions:
+The framework entries (`/nextjs`, `/express`, `/remix`, `/react-native`, `/browser`), `@codmir/sdk/ai` and `@codmir/sdk/overseer` export these functions, except where a row says otherwise. `@codmir/sdk/serverless` exports none of them.
 
 | Function | Description |
 |---|---|
@@ -862,31 +772,31 @@ All framework integrations re-export these core functions:
 | `captureException(error, context?)` | Manually capture an error |
 | `captureMessage(message, level?)` | Send a custom message event |
 | `setUser(user)` | Set user context (id, email, username) |
-| `setTag(key, value)` | Set a single tag on all future events |
+| `setTag(key, value)` | Set a single tag on all future events (not in `/browser` or `/react-native`) |
 | `setTags(tags)` | Set multiple tags at once |
 | `addBreadcrumb(breadcrumb)` | Add a breadcrumb for debugging context |
-| `flush(timeout?)` | Flush pending events (use before process exit) |
-| `close(timeout?)` | Flush and disable the SDK |
+| `flush(timeout?)` | Send queued events now (use before process exit); 2.0.1 ignores `timeout` |
+| `close()` | Stop the flush timer and send queued events. The SDK stays on: events captured after `close()` are still sent |
 
 ### SDK Config (shared config for all frameworks)
 
 ```typescript
 {
-  clientKey?: string;                    // Your project's client key
-  secretKey?: string;                    // Your project's secret key (server-side only)
-  environment?: string;                  // 'production' | 'staging' | 'development'
+  dsn?: string;                          // Events go to <dsn>/ingest. Default with a client key: https://codmir.com/api/overseer
+                                         // in Node, /api/overseer on the page's own origin in a browser
+  clientKey?: string;                    // Your project's client key, sent as the x-overseer-key header
+  environment?: string;                  // 'production' | 'staging' | 'development' (default: 'development')
   release?: string;                      // Your app's version/release identifier
   enabled?: boolean;                     // Enable/disable the SDK (default: true)
   debug?: boolean;                       // Enable debug logging (default: false)
-  sampleRate?: number;                   // Error sample rate 0-1 (default: 1.0)
-  tracesSampleRate?: number;             // Performance trace sample rate 0-1
-  replaysSessionSampleRate?: number;     // Session replay sample rate 0-1
-  replaysOnErrorSampleRate?: number;     // Replay-on-error sample rate 0-1
+  sampleRate?: number;                   // Event sample rate 0-1 (default: 1.0)
   beforeSend?: (event) => event|null;    // Hook to modify/filter events
   initialUser?: UserContext;             // Pre-set user context
   initialTags?: Record<string, string>;  // Pre-set tags
 }
 ```
+
+2.0.1 also accepts `secretKey`, `tracesSampleRate`, `replaysSessionSampleRate` and `replaysOnErrorSampleRate`, and stores them without using them.
 
 ---
 
@@ -896,37 +806,39 @@ After completing the setup for your framework, verify the integration is working
 
 ### Using the verify module
 
-The SDK includes a built-in verification module that sends a test event and confirms the round-trip:
+The SDK includes a verification module. `verify()` calls `init` with the config you pass, sends the test message `Codmir SDK setup verified`, and flushes it. In 2.0.1 it does not read the server's answer: it reports `success: true` and a `Connection verified` step even when the request was refused or failed, so confirm the event in the dashboard (see Manual verification, step 2).
 
 ```typescript
 import { verify, printVerifyResult } from '@codmir/sdk/verify';
 
 const result = await verify({
-  clientKey: process.env.NEXT_PUBLIC_CODMIR_CLIENT_KEY,
+  clientKey: process.env.CODMIR_CLIENT_KEY,
   onProgress: (step) => console.log(`[${step.status}] ${step.message}`),
 });
 
 console.log(printVerifyResult(result));
 ```
 
-Or use the one-liner:
+Or use the one-liner, which runs `verify()` and returns its `success`. It treats its argument as a client key only when it starts with `osk_` or `csk_`, and as a `dsn` otherwise:
 
 ```typescript
 import { quickVerify } from '@codmir/sdk/verify';
 
-const connected = await quickVerify(process.env.NEXT_PUBLIC_CODMIR_CLIENT_KEY);
-console.log(connected ? 'Connected!' : 'Failed to connect');
+const sent = await quickVerify(process.env.CODMIR_CLIENT_KEY);
+console.log(sent ? 'Test event sent: look for it in the dashboard' : 'The SDK did not capture the test event');
 ```
+
+Run these from a script of their own: because `verify()` calls `init`, it replaces the client your app set up, and the tags it adds (`source` and `sdk_version`) stay on that client's later events.
 
 ### Manual verification
 
 **1. Send a test event**
 
 ```typescript
-import * as Codmir from '@codmir/sdk/nextjs'; // or your platform-specific import
-
+// A script of its own, run with Node.js (or use your framework's snippet under Test Connection Snippets)
+import * as Codmir from '@codmir/sdk/overseer';
+Codmir.init({ clientKey: process.env.CODMIR_CLIENT_KEY });
 Codmir.captureMessage('SDK setup complete', 'info');
-
 // Flush to ensure events are sent before the process exits
 await Codmir.flush(5000);
 ```
@@ -947,17 +859,19 @@ Navigate to your project in the Codmir dashboard. You should see:
 
 ## Test Connection Snippets
 
+Each snippet sends one test message; look for it in the dashboard.
+
 ### Next.js
 
 ```typescript
 // instrumentation.ts
-import * as Codmir from '@codmir/sdk/nextjs';
-import { quickVerify } from '@codmir/sdk/verify';
-
 export async function register() {
-  Codmir.init({ clientKey: process.env.NEXT_PUBLIC_CODMIR_CLIENT_KEY });
-  const ok = await quickVerify(process.env.NEXT_PUBLIC_CODMIR_CLIENT_KEY!);
-  console.log(ok ? 'Codmir connected!' : 'Codmir connection failed');
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    const Codmir = await import('@codmir/sdk/nextjs');
+    Codmir.init({ clientKey: process.env.NEXT_PUBLIC_CODMIR_CLIENT_KEY });
+    Codmir.captureMessage('Next.js SDK setup complete', 'info');
+    await Codmir.flush();
+  }
 }
 ```
 
@@ -965,19 +879,17 @@ export async function register() {
 
 ```typescript
 import * as Codmir from '@codmir/sdk/express';
-import { quickVerify } from '@codmir/sdk/verify';
 
 Codmir.init({ clientKey: process.env.CODMIR_CLIENT_KEY });
-quickVerify(process.env.CODMIR_CLIENT_KEY!).then(ok =>
-  console.log(ok ? 'Codmir connected!' : 'Codmir connection failed')
-);
+Codmir.captureMessage('Express SDK setup complete', 'info');
+Codmir.flush();
 ```
 
 ### React Native
 
 ```typescript
 import * as Codmir from '@codmir/sdk/react-native';
-Codmir.init({ clientKey: 'your_client_key_here' });
+Codmir.init({ dsn: 'https://codmir.com/api/overseer', clientKey: 'your_client_key_here' });
 Codmir.captureMessage('React Native SDK setup complete', 'info');
 ```
 
@@ -985,7 +897,7 @@ Codmir.captureMessage('React Native SDK setup complete', 'info');
 
 ```typescript
 import * as Codmir from '@codmir/sdk/browser';
-Codmir.init({ clientKey: 'your_client_key_here' });
+Codmir.init({ dsn: 'https://codmir.com/api/overseer', clientKey: 'your_client_key_here' });
 Codmir.captureMessage('Browser SDK setup complete', 'info');
 ```
 
@@ -995,24 +907,25 @@ Codmir.captureMessage('Browser SDK setup complete', 'info');
 
 | Problem | Cause | Solution |
 |---|---|---|
-| "Unauthorized" error | Invalid or expired client key | Go to **Project Settings > SDK Setup** in the Codmir dashboard and regenerate your keys. |
+| Events never appear, and nothing reports an error | Invalid or expired client key: 2.0.1 does not read the server's answer | Go to **Project Settings > SDK Setup** in the Codmir dashboard and check or regenerate your client key. |
 | No events appearing in dashboard | Events not flushed before process exits | Call `await Codmir.flush(5000)` before the process exits, especially in serverless/CLI contexts. |
+| Browser events go to your own site | A browser `init` with a client key and no `dsn` | Pass `dsn: 'https://codmir.com/api/overseer'` to `init`. |
 | Events appearing in wrong project | Wrong client key configured | Verify the client key matches the project you are viewing in the dashboard. |
-| Next.js server errors not captured | Missing `instrumentation.ts` | Create `instrumentation.ts` in the project root and add `instrumentationHook: true` to `next.config.js`. |
-| Next.js client errors not captured | Missing error boundary | Add `app/global-error.tsx` and `app/error.tsx` with `Codmir.captureException(error)`. |
+| Next.js server errors not captured | Missing `instrumentation.ts`, or Next.js 14, which does not call `onRequestError` | Create `instrumentation.ts` in the project root (Next.js (App Router), Step 1), on Next.js 15 or later. |
+| Next.js client errors not captured | 2.0.1 does not build for the browser, so no step runs it there | See Next.js (App Router), Step 2. |
+| `next build` fails with `Module not found: Can't resolve 'fs'` or `'crypto'` | `@codmir/sdk/nextjs` imported in a client component, `_app.tsx` or `_error.tsx`, or at the top of `instrumentation.ts` | Follow Next.js (App Router), Steps 1 and 2. |
 | Express errors not captured | `errorHandler()` placed before routes | Move `app.use(Codmir.errorHandler())` to AFTER all route definitions. |
-| React Native crashes not reported | Missing `captureNativeCrashes: true` | Add `captureNativeCrashes: true` to the init config. |
-| Duplicate events | SDK initialized multiple times | Guard with `Codmir.isOverseerInitialized()` or ensure `init()` is called once. |
-| High event volume / costs | Sample rate too high in production | Set `sampleRate: 0.1` and `tracesSampleRate: 0.1` for production. |
+| React Native errors not reported | On 2.0.1, `init` throws in React Native (see React Native), and native crashes are never reported: `captureNativeCrashes` is accepted and not read | Check for a newer `@codmir/sdk` release. |
+| Duplicate events | SDK initialized multiple times | Guard with `Codmir.isOverseerInitialized()`, which the framework entries export (`/ai` and `/overseer` do not), or ensure `init()` is called once. |
+| High event volume / costs | Sample rate too high in production | Set `sampleRate: 0.1` for production. |
 
 ---
 
 ## Environment Variables
 
 ```env
-# Required -- your project's API keys
+# Required -- your project's client key
 CODMIR_CLIENT_KEY=your_client_key_here
-CODMIR_SECRET_KEY=your_secret_key_here
 
 # Next.js (must use NEXT_PUBLIC_ prefix for client-side access)
 NEXT_PUBLIC_CODMIR_CLIENT_KEY=your_client_key_here
@@ -1051,4 +964,4 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 | SDK Version | Node.js | Next.js | React | React Native |
 |---|---|---|---|---|
-| 1.x | >= 18 | >= 14 | >= 18 | >= 0.72 |
+| 2.0.1 | >= 18 | >= 14 | >= 18 | >= 0.72 |
