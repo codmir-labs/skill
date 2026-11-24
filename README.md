@@ -39,10 +39,9 @@ returns SDK setup instructions as strings, one set per framework, from an earlie
 > [!NOTE]
 > Checked on 2026-11-23 against this repository at commit [`cf73faa`](https://github.com/codmir-labs/skill/commit/cf73faa),
 > `@codmir/sdk` 2.0.1 and `@codmir/mcp` 0.2.5 (the latest releases on npm that day, each read from its tarball), and
-> each client's documentation, linked where it is used. Three things to know before you run it: `SKILL.md` has no
-> frontmatter, which changes how each client loads it ([Use it with your agent](#use-it-with-your-agent)); some of the
-> code it has an agent write does not run on 2.0.1 ([Check before you run it](#check-before-you-run-it)); and
-> `@codmir/skill` is not on npm ([Use it from code](#use-it-from-code)).
+> each client's documentation, linked where it is used. Two things to know before you run it: some of the code it has
+> an agent write does not run on 2.0.1 ([Check before you run it](#check-before-you-run-it)), and `@codmir/skill` is
+> not on npm ([Use it from code](#use-it-from-code)).
 
 <details>
 <summary><b>Contents</b></summary>
@@ -67,7 +66,7 @@ returns SDK setup instructions as strings, one set per framework, from an earlie
 <td width="33%" valign="top">
 <img src="docs/assets/icons/skill.svg" width="40" height="40" alt=""><br>
 <b><a href="SKILL.md"><code>SKILL.md</code></a>, for agents</b><br>
-1,050 lines in two parts: the Codmir MCP server for five clients (<a href="SKILL.md?plain=1#L9-L186">lines 9 to 186</a>), then <code>@codmir/sdk</code> for eight setups, with an API reference, verification and common issues (<a href="SKILL.md?plain=1#L190-L1050">lines 190 to 1050</a>).
+1,054 lines in two parts: the Codmir MCP server for five clients (<a href="SKILL.md?plain=1#L13-L190">lines 13 to 190</a>), then <code>@codmir/sdk</code> for eight setups, with an API reference, verification and common issues (<a href="SKILL.md?plain=1#L194-L1054">lines 194 to 1054</a>).
 </td>
 <td width="33%" valign="top">
 <img src="docs/assets/icons/library.svg" width="40" height="40" alt=""><br>
@@ -88,22 +87,22 @@ A TypeScript library whose functions return the instructions in <a href="src/ins
 Claude Desktop takes the same folder as a ZIP file. They differ in where the folder goes and in what its frontmatter
 must say.
 
-> [!IMPORTANT]
-> `SKILL.md` starts with `# Codmir Skill` ([line 1](SKILL.md?plain=1#L1)), not with frontmatter: the `name` and
-> `description` fields between two `---` lines. The [Agent Skills](https://agentskills.io/specification) standard
-> requires both, and its reference validator, `skills-ref` 0.1.1, rejects the file as it is:
-> `SKILL.md must start with YAML frontmatter (---)`.
+> [!NOTE]
+> `SKILL.md` starts with frontmatter ([lines 1 to 4](SKILL.md?plain=1#L1-L4)): the `name` and `description` fields
+> between two `---` lines, here `codmir` and a description of 174 characters. The
+> [Agent Skills](https://agentskills.io/specification) standard requires both, and its reference validator,
+> `skills-ref` 0.1.1, accepts the file in a folder named `codmir`: `Valid skill`.
 
-What each client's documentation says about a `SKILL.md` without frontmatter:
+What each client's documentation requires, and how `SKILL.md` meets it:
 
-| Client | `SKILL.md` as it is in this repository | What to add |
+| Client | Its documentation | `SKILL.md` |
 | --- | --- | --- |
-| [Claude Code](#claude-code) | Loads. Every field is optional: `name` defaults to the folder name and `description` to the first non-empty line, here `# Codmir Skill` | A `description`, so Claude knows when to use it |
-| [Claude Desktop](#claude-desktop) | Not as it is. Anthropic's guide lists `name` and `description` as required, the description at most 200 characters | Both |
-| [Cursor](#cursor) | Not as it is: `name` and `description` are required | Both |
-| [Windsurf](#windsurf) | Loads. Frontmatter is optional: `name` defaults to the folder name, and `description` has no default | A `description` |
-| [GitHub Copilot](#github-copilot) | Not as it is: `name` and `description` are required | Both |
-| [VS Code](#vs-code) | Not as it is: both are required, and a skill whose `name` does not match its folder is not loaded | Both |
+| [Claude Code](#claude-code) | Every field is optional: `name` defaults to the folder name and `description` to the first non-empty line | Sets both; the description tells Claude when to use it |
+| [Claude Desktop](#claude-desktop) | Anthropic's guide lists `name` and `description` as required, the description at most 200 characters | Has both; the description is 174 characters |
+| [Cursor](#cursor) | `name` and `description` are required, and `name` must match the folder | Has both; `name` matches the `codmir/` folder |
+| [Windsurf](#windsurf) | Frontmatter is optional: `name` defaults to the folder name, and `description` has no default | Sets both; the description is what the agent decides by |
+| [GitHub Copilot](#github-copilot) | `name` and `description` are required | Has both |
+| [VS Code](#vs-code) | Both are required, and a skill whose `name` does not match its folder is not loaded | Has both; `name` matches the `codmir/` folder |
 
 ### One command for every client
 
@@ -118,28 +117,21 @@ Where the folder goes:
 | VS Code | `.github/skills/codmir/` | `~/.copilot/skills/codmir/` |
 | Claude Desktop | A ZIP of a `codmir/` folder, uploaded to your account | The same upload |
 
-From your project's root, on macOS, Linux, WSL or Git Bash, set `DEST` to your client's folder and run this. It writes
-frontmatter that all six clients accept, then the contents of `SKILL.md`:
+From your project's root, on macOS, Linux, WSL or Git Bash, set `DEST` to your client's folder and run this. It makes
+the folder and downloads `SKILL.md` into it:
 
 <!-- snippet: install -->
 ```bash
 DEST=.claude/skills/codmir   # your client's folder from the table above
-body=$(curl -fsSL https://raw.githubusercontent.com/codmir-labs/skill/main/SKILL.md) &&
-  mkdir -p "$DEST" &&
-  cat > "$DEST/SKILL.md" <<EOF
----
-name: codmir
-description: Connects an AI client to the Codmir MCP server and installs @codmir/sdk in a project. Use when asked to set up Codmir, its MCP tools, or Codmir error tracking and monitoring.
----
-
-$body
-EOF
+mkdir -p "$DEST" &&
+  curl -fsSL -o "$DEST/SKILL.md" https://raw.githubusercontent.com/codmir-labs/skill/main/SKILL.md
 ```
 
-`name` matches the folder name, as Cursor and VS Code require and GitHub Copilot's documentation says it typically
-does. The description is 174 characters, inside the 200 that Anthropic's guide allows for Claude Desktop. Claude Code
-reads the frontmatter only when `---` is the first line of the file. If `curl` fails, nothing after it runs and
-nothing is written.
+The file's `name`, `codmir`, matches the folder name, as Cursor and VS Code require and GitHub Copilot's documentation
+says it typically does. The description is 174 characters, inside the 200 that Anthropic's guide allows for Claude
+Desktop. Claude Code reads the frontmatter only when `---` is the first line of the file, as it is in `SKILL.md`. If
+the server answers with an error, such as a 404, or cannot be reached, `curl` exits with an error and writes no
+`SKILL.md`.
 
 > [!WARNING]
 > A skill is instructions your agent follows, and this one has it run `npm install`, edit your code and put keys in
@@ -161,7 +153,7 @@ Documentation: [Extend Claude with skills](https://code.claude.com/docs/en/skill
 - Run it with `/codmir`, or ask for the task and let Claude match your request to the description. Text you type
   after `/codmir` reaches Claude as `ARGUMENTS: <your input>` at the end of the skill, because `SKILL.md` has no
   `$ARGUMENTS` placeholder.
-- `SKILL.md` is 1,050 lines. The documentation advises keeping a skill's `SKILL.md` under 500 lines and moving
+- `SKILL.md` is 1,054 lines. The documentation advises keeping a skill's `SKILL.md` under 500 lines and moving
   reference material into separate files.
 
 ### Claude Desktop
@@ -174,7 +166,8 @@ cover custom skills for Claude as a whole; they do not describe Claude Desktop s
   **+ Create skill**, then **Upload a skill**.
 - Make the ZIP with the command above and `DEST=codmir`, then run `zip -r codmir.zip codmir`. The ZIP holds the
   `codmir/` folder at its root, as the guide requires, and the folder name matches `name`.
-- Frontmatter is required here: `name`, at most 64 characters, and `description`, at most 200.
+- Frontmatter is required here: `name`, at most 64 characters, and `description`, at most 200. In `SKILL.md` they
+  are 6 and 174 characters.
 - Skills need code execution. On Free, Pro, Max and Ultra plans, turn on **Code execution and file creation** (called
   **Create and edit files** in the updated layout) in **Settings > Capabilities**. On Team and Enterprise plans, code
   execution and Skills are both turned on in **Organization settings > Plugins & skills**, on the **Policy** tab; Team
@@ -252,12 +245,12 @@ It relies on three things:
 <td width="50%" valign="top">
 <img src="docs/assets/icons/mcp.svg" width="40" height="40" alt=""><br>
 <b><a href="#the-mcp-server">The MCP server</a></b><br>
-An MCP config entry that runs <code>npx @codmir/mcp</code> in Claude Code, Claude Desktop, Windsurf, Cursor or VS Code, its credentials, and a first question to check it (<a href="SKILL.md?plain=1#L9-L186">lines 9 to 186</a>).
+An MCP config entry that runs <code>npx @codmir/mcp</code> in Claude Code, Claude Desktop, Windsurf, Cursor or VS Code, its credentials, and a first question to check it (<a href="SKILL.md?plain=1#L13-L190">lines 13 to 190</a>).
 </td>
 <td width="50%" valign="top">
 <img src="docs/assets/icons/sdk.svg" width="40" height="40" alt=""><br>
 <b><a href="#the-sdk-framework-by-framework">The SDK</a></b><br>
-<code>npm install @codmir/sdk</code>, the init and error-handling code for one of eight setups, the keys in an env file, and a test event (<a href="SKILL.md?plain=1#L190-L1050">lines 190 to 1050</a>).
+<code>npm install @codmir/sdk</code>, the init and error-handling code for one of eight setups, the keys in an env file, and a test event (<a href="SKILL.md?plain=1#L194-L1054">lines 194 to 1054</a>).
 </td>
 </tr>
 </table>
@@ -269,17 +262,17 @@ For each of five clients, `SKILL.md` has the agent add a server named `codmir` t
 
 | Client | The file `SKILL.md` writes | Lines |
 | --- | --- | --- |
-| Claude Code | `.claude/mcp.json` in the project root, or `~/.claude/mcp.json` for every project | [15 to 34](SKILL.md?plain=1#L15-L34) |
-| Claude Desktop | `claude_desktop_config.json`, in `~/Library/Application Support/Claude/` on macOS, `%APPDATA%\Claude\` on Windows or `~/.config/Claude/` on Linux | [36 to 57](SKILL.md?plain=1#L36-L57) |
-| Windsurf | `.windsurf/mcp.json` | [59 to 72](SKILL.md?plain=1#L59-L72) |
-| Cursor | `.cursor/mcp.json` | [74 to 87](SKILL.md?plain=1#L74-L87) |
-| VS Code | `.vscode/mcp.json` | [89 to 102](SKILL.md?plain=1#L89-L102) |
+| Claude Code | `.claude/mcp.json` in the project root, or `~/.claude/mcp.json` for every project | [19 to 38](SKILL.md?plain=1#L19-L38) |
+| Claude Desktop | `claude_desktop_config.json`, in `~/Library/Application Support/Claude/` on macOS, `%APPDATA%\Claude\` on Windows or `~/.config/Claude/` on Linux | [40 to 61](SKILL.md?plain=1#L40-L61) |
+| Windsurf | `.windsurf/mcp.json` | [63 to 76](SKILL.md?plain=1#L63-L76) |
+| Cursor | `.cursor/mcp.json` | [78 to 91](SKILL.md?plain=1#L78-L91) |
+| VS Code | `.vscode/mcp.json` | [93 to 106](SKILL.md?plain=1#L93-L106) |
 
 The Claude Code and Claude Desktop entries also set `CODMIR_API_TOKEN` and `CODMIR_USER_ID`. `SKILL.md` says the
 server reads those after `~/.codmir/credentials.json`, the file it says `codmir login` writes
-([lines 104 to 117](SKILL.md?plain=1#L104-L117)). `SKILL.md` then lists 33 tools in five groups
-([lines 119 to 176](SKILL.md?plain=1#L119-L176)) and ends with a check: restart the client and ask "What's on my
-to-do list?" ([lines 178 to 186](SKILL.md?plain=1#L178-L186)). Which of these files each client reads is in
+([lines 108 to 121](SKILL.md?plain=1#L108-L121)). `SKILL.md` then lists 33 tools in five groups
+([lines 123 to 180](SKILL.md?plain=1#L123-L180)) and ends with a check: restart the client and ask "What's on my
+to-do list?" ([lines 182 to 190](SKILL.md?plain=1#L182-L190)). Which of these files each client reads is in
 [MCP config files](#mcp-config-files-against-each-clients-documentation).
 
 ### The SDK, framework by framework
@@ -290,15 +283,15 @@ first step is `npm install @codmir/sdk`.
 
 | Framework | Id and import | What the instructions write, and where | `src/instructions.ts` | `SKILL.md` |
 | --- | --- | --- | --- | --- |
-| Next.js | `nextjs`, `@codmir/sdk/nextjs` | Both Next.js sets below, after a rule for choosing: an `app/` directory means the App Router, `pages/` the Pages Router, and both the App Router | [208 to 226](src/instructions.ts#L208-L226) | [224 to 391](SKILL.md?plain=1#L224-L391) |
-| Next.js (App Router) | `nextjs-app-router`, `@codmir/sdk/nextjs` | `instrumentation.ts` next to `next.config.js`, calling `Codmir.init` in `register()` and exporting `onRequestError`; `app/global-error.tsx` and `app/error.tsx` calling `Codmir.captureException`; `experimental.instrumentationHook` in `next.config.js`; the DSN in `.env.local` | [15 to 134](src/instructions.ts#L15-L134) | [224 to 329](SKILL.md?plain=1#L224-L329) |
-| Next.js (Pages Router) | `nextjs-pages-router`, `@codmir/sdk/nextjs` | `Codmir.init` in `pages/_app.tsx`; `pages/_error.tsx` capturing the error and calling `Codmir.flush(2000)`; the DSN in `.env.local` | [136 to 205](src/instructions.ts#L136-L205) | [333 to 391](SKILL.md?plain=1#L333-L391) |
-| Express.js | `express`, `@codmir/sdk/express` | In `src/app.ts`: `Codmir.init` before the app is created, `requestHandler()` as the first middleware, `tracingHandler()`, and `errorHandler()` after the routes | [232 to 307](src/instructions.ts#L232-L307) | [395 to 458](SKILL.md?plain=1#L395-L458) |
-| Remix | `remix`, `@codmir/sdk/remix` | `Codmir.init` and `export const handleError` in `app/entry.server.tsx`; `wrapLoader` and `wrapAction` in route files; an `ErrorBoundary` in `app/root.tsx` | [313 to 406](src/instructions.ts#L313-L406) | [462 to 543](SKILL.md?plain=1#L462-L543) |
-| React Native | `react-native`, `@codmir/sdk/react-native` | `Codmir.init` in `App.tsx`, the app wrapped in `Codmir.ErrorBoundary`; a navigation breadcrumb in `onStateChange`; `captureException` in async code | [412 to 499](src/instructions.ts#L412-L499) | [547 to 620](SKILL.md?plain=1#L547-L620) |
-| Browser (Vanilla JS) | `browser`, `@codmir/sdk/browser` | `Codmir.init` in `src/main.ts` for a bundled app, or in an inline module script, with the DSN in a Vite, Create React App or Webpack variable | [505 to 572](src/instructions.ts#L505-L572) | [624 to 684](SKILL.md?plain=1#L624-L684) |
-| Serverless (Lambda / Workers) | `serverless`, `@codmir/sdk/serverless` | An AWS Lambda handler and a Cloudflare Workers `fetch` handler built with `createApp` and `createFunction`, and a decorator-style alternative that makes the app with the `App` method of a `codmir` export and wraps the handler with `fn` | [578 to 666](src/instructions.ts#L578-L666) | [688 to 753](SKILL.md?plain=1#L688-L753) |
-| AI Monitoring (OpenAI / Anthropic) | `ai-monitor`, `@codmir/sdk/ai` | In `src/ai-client.ts`: `CodmirAI.init`, `wrapOpenAI` and `wrapAnthropic` around the clients, `trackAICall` for other providers, and `getAIUsageSummary` | [672 to 770](src/instructions.ts#L672-L770) | [757 to 847](SKILL.md?plain=1#L757-L847) |
+| Next.js | `nextjs`, `@codmir/sdk/nextjs` | Both Next.js sets below, after a rule for choosing: an `app/` directory means the App Router, `pages/` the Pages Router, and both the App Router | [208 to 226](src/instructions.ts#L208-L226) | [228 to 395](SKILL.md?plain=1#L228-L395) |
+| Next.js (App Router) | `nextjs-app-router`, `@codmir/sdk/nextjs` | `instrumentation.ts` next to `next.config.js`, calling `Codmir.init` in `register()` and exporting `onRequestError`; `app/global-error.tsx` and `app/error.tsx` calling `Codmir.captureException`; `experimental.instrumentationHook` in `next.config.js`; the DSN in `.env.local` | [15 to 134](src/instructions.ts#L15-L134) | [228 to 333](SKILL.md?plain=1#L228-L333) |
+| Next.js (Pages Router) | `nextjs-pages-router`, `@codmir/sdk/nextjs` | `Codmir.init` in `pages/_app.tsx`; `pages/_error.tsx` capturing the error and calling `Codmir.flush(2000)`; the DSN in `.env.local` | [136 to 205](src/instructions.ts#L136-L205) | [337 to 395](SKILL.md?plain=1#L337-L395) |
+| Express.js | `express`, `@codmir/sdk/express` | In `src/app.ts`: `Codmir.init` before the app is created, `requestHandler()` as the first middleware, `tracingHandler()`, and `errorHandler()` after the routes | [232 to 307](src/instructions.ts#L232-L307) | [399 to 462](SKILL.md?plain=1#L399-L462) |
+| Remix | `remix`, `@codmir/sdk/remix` | `Codmir.init` and `export const handleError` in `app/entry.server.tsx`; `wrapLoader` and `wrapAction` in route files; an `ErrorBoundary` in `app/root.tsx` | [313 to 406](src/instructions.ts#L313-L406) | [466 to 547](SKILL.md?plain=1#L466-L547) |
+| React Native | `react-native`, `@codmir/sdk/react-native` | `Codmir.init` in `App.tsx`, the app wrapped in `Codmir.ErrorBoundary`; a navigation breadcrumb in `onStateChange`; `captureException` in async code | [412 to 499](src/instructions.ts#L412-L499) | [551 to 624](SKILL.md?plain=1#L551-L624) |
+| Browser (Vanilla JS) | `browser`, `@codmir/sdk/browser` | `Codmir.init` in `src/main.ts` for a bundled app, or in an inline module script, with the DSN in a Vite, Create React App or Webpack variable | [505 to 572](src/instructions.ts#L505-L572) | [628 to 688](SKILL.md?plain=1#L628-L688) |
+| Serverless (Lambda / Workers) | `serverless`, `@codmir/sdk/serverless` | An AWS Lambda handler and a Cloudflare Workers `fetch` handler built with `createApp` and `createFunction`, and a decorator-style alternative that makes the app with the `App` method of a `codmir` export and wraps the handler with `fn` | [578 to 666](src/instructions.ts#L578-L666) | [692 to 757](SKILL.md?plain=1#L692-L757) |
+| AI Monitoring (OpenAI / Anthropic) | `ai-monitor`, `@codmir/sdk/ai` | In `src/ai-client.ts`: `CodmirAI.init`, `wrapOpenAI` and `wrapAnthropic` around the clients, `trackAICall` for other providers, and `getAIUsageSummary` | [672 to 770](src/instructions.ts#L672-L770) | [761 to 851](SKILL.md?plain=1#L761-L851) |
 
 > [!NOTE]
 > The library and `SKILL.md` set the SDK up two different ways. `src/instructions.ts` came with the repository's first
@@ -317,7 +310,7 @@ The flowchart uses only the steps `SKILL.md` gives. The two parts are independen
 flowchart LR
     L["The agent reads<br/>SKILL.md"] --> M1
     L --> S1
-    subgraph MCP ["MCP server: SKILL.md lines 9 to 186"]
+    subgraph MCP ["MCP server: SKILL.md lines 13 to 190"]
         M1{"Which<br/>client?"}
         M1 -- "Claude Code" --> C1[".claude/mcp.json"]
         M1 -- "Claude Desktop" --> C2["claude_desktop_config.json"]
@@ -331,7 +324,7 @@ flowchart LR
         C5 --> A
         A["Credentials: codmir login,<br/>or CODMIR_API_TOKEN<br/>and CODMIR_USER_ID"] --> V1["Restart the client, ask:<br/>What's on my to-do list?"]
     end
-    subgraph SDK ["SDK: SKILL.md lines 190 to 1050"]
+    subgraph SDK ["SDK: SKILL.md lines 194 to 1054"]
         S1["Client Key and Secret Key<br/>from Project Settings,<br/>SDK Setup"] --> S2["npm install @codmir/sdk"]
         S2 --> S3{"Which<br/>framework?"}
         S3 -- "Next.js App Router" --> F1["instrumentation.ts,<br/>app/global-error.tsx,<br/>app/error.tsx"]
@@ -465,21 +458,21 @@ others were read from it. Line numbers in the third column are in the package's 
 
 | `SKILL.md` or `src/instructions.ts` tells the agent to | `@codmir/sdk` 2.0.1 | Source |
 | --- | --- | --- |
-| Wrap the app in `<Codmir.ErrorBoundary>` from `@codmir/sdk/react-native` (`SKILL.md` [573](SKILL.md?plain=1#L573), `src/instructions.ts` [439](src/instructions.ts#L439)) | The entry has no `ErrorBoundary` export, so `Codmir.ErrorBoundary` is `undefined`. It has `createErrorBoundary(React)`, which returns an error-boundary class that takes a `fallback` prop | `dist/react-native/index.js:82-109`, run |
-| `import { codmir, fn } from '@codmir/sdk/serverless'`, then make the app with its `App` method (`SKILL.md` [696](SKILL.md?plain=1#L696), [698](SKILL.md?plain=1#L698), [724](SKILL.md?plain=1#L724), [726](SKILL.md?plain=1#L726); `src/instructions.ts` [643](src/instructions.ts#L643), [645](src/instructions.ts#L645)) | There is no `codmir` export, and Node stops at the import: `The requested module '@codmir/sdk/serverless' does not provide an export named 'codmir'`. The entry has `app(config)` and `fn(app, config)` instead, and a function built with `fn(app, options)(handler)` ran | `dist/serverless/index.js:996-1001`, run |
+| Wrap the app in `<Codmir.ErrorBoundary>` from `@codmir/sdk/react-native` (`SKILL.md` [577](SKILL.md?plain=1#L577), `src/instructions.ts` [439](src/instructions.ts#L439)) | The entry has no `ErrorBoundary` export, so `Codmir.ErrorBoundary` is `undefined`. It has `createErrorBoundary(React)`, which returns an error-boundary class that takes a `fallback` prop | `dist/react-native/index.js:82-109`, run |
+| `import { codmir, fn } from '@codmir/sdk/serverless'`, then make the app with its `App` method (`SKILL.md` [700](SKILL.md?plain=1#L700), [702](SKILL.md?plain=1#L702), [728](SKILL.md?plain=1#L728), [730](SKILL.md?plain=1#L730); `src/instructions.ts` [643](src/instructions.ts#L643), [645](src/instructions.ts#L645)) | There is no `codmir` export, and Node stops at the import: `The requested module '@codmir/sdk/serverless' does not provide an export named 'codmir'`. The entry has `app(config)` and `fn(app, config)` instead, and a function built with `fn(app, options)(handler)` ran | `dist/serverless/index.js:996-1001`, run |
 | `createFunction(app, options)(handler)` (`src/instructions.ts` [598](src/instructions.ts#L598), [624](src/instructions.ts#L624)) | `createFunction(app, config, handler)` takes the handler as a third argument and returns the function object, so the call throws `TypeError: createFunction(...) is not a function` | `dist/serverless/index.js:464-466`, run |
-| `export const handler = processEvent.local` (`SKILL.md` [714](SKILL.md?plain=1#L714), [717](SKILL.md?plain=1#L717); `src/instructions.ts` [611](src/instructions.ts#L611), [614](src/instructions.ts#L614)) | `local` and `remote` are methods that use `this`. Called on its own, `local` throws `TypeError: Cannot read properties of undefined (reading 'executionCount')`; `processEvent.local(event)` works | `dist/serverless/index.js:301-303`, run |
-| Use the serverless integration, which "wraps your handler function to capture errors and flush events" ([690](SKILL.md?plain=1#L690)), with `CODMIR_CLIENT_KEY` and `CODMIR_SECRET_KEY` ([748 to 753](SKILL.md?plain=1#L748-L753)) | `@codmir/sdk/serverless` makes no capture or flush call. `local()` runs your handler in the same process, and `remote()` sends the call to the Codmir API with `CODMIR_API_URL` and `CODMIR_API_KEY` | `dist/serverless/index.js:140-142`, `:301-331` |
-| Pass `secretKey: process.env.CODMIR_SECRET_KEY` to `init` ([417](SKILL.md?plain=1#L417), [478](SKILL.md?plain=1#L478), [771](SKILL.md?plain=1#L771)) | `init` stores it and nothing reads it: the request that sends an event does not contain it | `dist/chunk-6CRI34ER.js:1150`, run |
-| Call the browser `init` with a `clientKey` and no `dsn` ([635 to 642](SKILL.md?plain=1#L635-L642), [655 to 661](SKILL.md?plain=1#L655-L661)) | Given a key and no `dsn`, `init` picks the endpoint: `https://codmir.com/api/overseer` in Node, but `/api/overseer` on the page's own origin in a browser. So these events go to `/api/overseer/ingest` on your own site | `dist/chunk-6CRI34ER.js:1145-1148`, `:1338`, run |
-| Set `tracesSampleRate`, `replaysSessionSampleRate` and `replaysOnErrorSampleRate` (`SKILL.md` [238 to 240](SKILL.md?plain=1#L238-L240), [480](SKILL.md?plain=1#L480); `src/instructions.ts` [35 to 37](src/instructions.ts#L35-L37), [336](src/instructions.ts#L336)) for tracing and session replay ([197](SKILL.md?plain=1#L197)) | `init` stores the three numbers and no other line of the package reads them | `dist/chunk-6CRI34ER.js:1157-1159` |
-| Set `captureNativeCrashes`, `trackScreenViews` and `trackAppState` (`SKILL.md` [566 to 568](SKILL.md?plain=1#L566-L568), [1000](SKILL.md?plain=1#L1000); `src/instructions.ts` [432 to 434](src/instructions.ts#L432-L434)) | `init` takes the three options and no other line reads them. Its global error handler is installed either way | `dist/react-native/index.js:21-23`, `:29-40` |
-| Confirm the setup with `verify()`, which "sends a test event and confirms the round-trip" ([895](SKILL.md?plain=1#L895)), or `quickVerify()` ([911 to 914](SKILL.md?plain=1#L911-L914), [955](SKILL.md?plain=1#L955), [967](SKILL.md?plain=1#L967)) | Both report success whatever the server says. `quickVerify` returned `true` when the server answered 401, and `verify()` returned `success: true` when the request failed: the request's status is never read, a failed flush is reported as a success, and the last step always reports `Connection verified`. `quickVerify` also treats its argument as a key only when it starts with `osk_` or `csk_`, and as a DSN otherwise | `dist/verify/index.js:63-91`, `:93-95`, `dist/chunk-6CRI34ER.js:1285-1296`, `:1346-1350`, run |
-| Read `totalTokens`, `callCount` and `errorCount` from `getAIUsageSummary()` (`SKILL.md` [828 to 837](SKILL.md?plain=1#L828-L837), `src/instructions.ts` [752](src/instructions.ts#L752)) | It returns `totalCalls`, `totalInputTokens`, `totalOutputTokens`, `totalCost`, `avgLatencyMs`, `byProvider` and `byModel` | `dist/ai/index.js:326-335`, run |
-| Use `setTag` from any framework entry: "All framework integrations re-export these core functions" ([853](SKILL.md?plain=1#L853), [861](SKILL.md?plain=1#L861)) | `@codmir/sdk/browser` and `@codmir/sdk/react-native` have no `setTag`; both have `setTags` | the entries' exports, run |
-| Call `close(timeout?)`: "Flush and disable the SDK" ([865](SKILL.md?plain=1#L865)) | `close()` stops the timer and flushes, and leaves the SDK on: `captureException` after it still returned an event id | `dist/chunk-6CRI34ER.js:1297-1302`, run |
-| Load the SDK from a CDN as `CodmirBrowser` ([664 to 674](SKILL.md?plain=1#L664-L674)) | `cdn.codmir.com` does not resolve, and no file in the package mentions `CodmirBrowser` | `curl`, the tarball |
-| Use SDK `1.x` ([1050](SKILL.md?plain=1#L1050)) | `npm install @codmir/sdk` installs 2.0.1. Its peer ranges, Next.js 14, React 18 and React Native 0.72 or later, and Node 18 or later match the rest of that row | `package.json:3`, `:153-156`, `:178-179` |
+| `export const handler = processEvent.local` (`SKILL.md` [718](SKILL.md?plain=1#L718), [721](SKILL.md?plain=1#L721); `src/instructions.ts` [611](src/instructions.ts#L611), [614](src/instructions.ts#L614)) | `local` and `remote` are methods that use `this`. Called on its own, `local` throws `TypeError: Cannot read properties of undefined (reading 'executionCount')`; `processEvent.local(event)` works | `dist/serverless/index.js:301-303`, run |
+| Use the serverless integration, which "wraps your handler function to capture errors and flush events" ([694](SKILL.md?plain=1#L694)), with `CODMIR_CLIENT_KEY` and `CODMIR_SECRET_KEY` ([752 to 757](SKILL.md?plain=1#L752-L757)) | `@codmir/sdk/serverless` makes no capture or flush call. `local()` runs your handler in the same process, and `remote()` sends the call to the Codmir API with `CODMIR_API_URL` and `CODMIR_API_KEY` | `dist/serverless/index.js:140-142`, `:301-331` |
+| Pass `secretKey: process.env.CODMIR_SECRET_KEY` to `init` ([421](SKILL.md?plain=1#L421), [482](SKILL.md?plain=1#L482), [775](SKILL.md?plain=1#L775)) | `init` stores it and nothing reads it: the request that sends an event does not contain it | `dist/chunk-6CRI34ER.js:1150`, run |
+| Call the browser `init` with a `clientKey` and no `dsn` ([639 to 646](SKILL.md?plain=1#L639-L646), [659 to 665](SKILL.md?plain=1#L659-L665)) | Given a key and no `dsn`, `init` picks the endpoint: `https://codmir.com/api/overseer` in Node, but `/api/overseer` on the page's own origin in a browser. So these events go to `/api/overseer/ingest` on your own site | `dist/chunk-6CRI34ER.js:1145-1148`, `:1338`, run |
+| Set `tracesSampleRate`, `replaysSessionSampleRate` and `replaysOnErrorSampleRate` (`SKILL.md` [242 to 244](SKILL.md?plain=1#L242-L244), [484](SKILL.md?plain=1#L484); `src/instructions.ts` [35 to 37](src/instructions.ts#L35-L37), [336](src/instructions.ts#L336)) for tracing and session replay ([201](SKILL.md?plain=1#L201)) | `init` stores the three numbers and no other line of the package reads them | `dist/chunk-6CRI34ER.js:1157-1159` |
+| Set `captureNativeCrashes`, `trackScreenViews` and `trackAppState` (`SKILL.md` [570 to 572](SKILL.md?plain=1#L570-L572), [1004](SKILL.md?plain=1#L1004); `src/instructions.ts` [432 to 434](src/instructions.ts#L432-L434)) | `init` takes the three options and no other line reads them. Its global error handler is installed either way | `dist/react-native/index.js:21-23`, `:29-40` |
+| Confirm the setup with `verify()`, which "sends a test event and confirms the round-trip" ([899](SKILL.md?plain=1#L899)), or `quickVerify()` ([915 to 918](SKILL.md?plain=1#L915-L918), [959](SKILL.md?plain=1#L959), [971](SKILL.md?plain=1#L971)) | Both report success whatever the server says. `quickVerify` returned `true` when the server answered 401, and `verify()` returned `success: true` when the request failed: the request's status is never read, a failed flush is reported as a success, and the last step always reports `Connection verified`. `quickVerify` also treats its argument as a key only when it starts with `osk_` or `csk_`, and as a DSN otherwise | `dist/verify/index.js:63-91`, `:93-95`, `dist/chunk-6CRI34ER.js:1285-1296`, `:1346-1350`, run |
+| Read `totalTokens`, `callCount` and `errorCount` from `getAIUsageSummary()` (`SKILL.md` [832 to 841](SKILL.md?plain=1#L832-L841), `src/instructions.ts` [752](src/instructions.ts#L752)) | It returns `totalCalls`, `totalInputTokens`, `totalOutputTokens`, `totalCost`, `avgLatencyMs`, `byProvider` and `byModel` | `dist/ai/index.js:326-335`, run |
+| Use `setTag` from any framework entry: "All framework integrations re-export these core functions" ([857](SKILL.md?plain=1#L857), [865](SKILL.md?plain=1#L865)) | `@codmir/sdk/browser` and `@codmir/sdk/react-native` have no `setTag`; both have `setTags` | the entries' exports, run |
+| Call `close(timeout?)`: "Flush and disable the SDK" ([869](SKILL.md?plain=1#L869)) | `close()` stops the timer and flushes, and leaves the SDK on: `captureException` after it still returned an event id | `dist/chunk-6CRI34ER.js:1297-1302`, run |
+| Load the SDK from a CDN as `CodmirBrowser` ([668 to 678](SKILL.md?plain=1#L668-L678)) | `cdn.codmir.com` does not resolve, and no file in the package mentions `CodmirBrowser` | `curl`, the tarball |
+| Use SDK `1.x` ([1054](SKILL.md?plain=1#L1054)) | `npm install @codmir/sdk` installs 2.0.1. Its peer ranges, Next.js 14, React 18 and React Native 0.72 or later, and Node 18 or later match the rest of that row | `package.json:3`, `:153-156`, `:178-179` |
 | Write each snippet as TypeScript (`.ts`, `.tsx`) | The package ships no `.d.ts` file although `types` names `./dist/index.d.ts`, so with `strict` on, `tsc` fails at the import with `TS7016: Could not find a declaration file for module '@codmir/sdk/nextjs'` | `package.json:8`, tsc 5.9.3, run |
 
 What matches 2.0.1, under the names `SKILL.md` uses: `npm install @codmir/sdk`; the Next.js functions (`init`,
@@ -494,12 +487,12 @@ above. These were checked against each entry's exports and the code that reads e
 
 | `SKILL.md` says | `@codmir/mcp` 0.2.5 and the hosted connector | Source |
 | --- | --- | --- |
-| Run the server with `"command": "npx", "args": ["@codmir/mcp"]` ([23 to 24](SKILL.md?plain=1#L23-L24), [48 to 49](SKILL.md?plain=1#L48-L49), [67 to 68](SKILL.md?plain=1#L67-L68), [82 to 83](SKILL.md?plain=1#L82-L83), [97 to 98](SKILL.md?plain=1#L97-L98)) | This starts 0.2.5. The package has one command, `codmir-mcp`, and [`npm exec`](https://docs.npmjs.com/cli/v9/commands/npm-exec) runs a package's only command. Started both ways, `npx @codmir/mcp` and `npx -y -p @codmir/mcp codmir-mcp` answered `initialize` and listed 33 tools. The second form, which the [codmir-labs/mcp](https://github.com/codmir-labs/mcp) README uses, names the command, so it does not depend on the package having only one | `package.json:32-34`, run |
-| `codmir login` writes `~/.codmir/credentials.json`, and "Not authenticated" means run it ([34](SKILL.md?plain=1#L34), [108](SKILL.md?plain=1#L108), [113 to 117](SKILL.md?plain=1#L113-L117), [186](SKILL.md?plain=1#L186)) | 0.2.5 has no `codmir` command, and its own messages say `Run "overseer login"`. It reads `~/.codmir/credentials.json` first, then `CODMIR_API_TOKEN` and `CODMIR_USER_ID`, with `CODMIR_API_URL` defaulting to `https://codmir.com`: the order `SKILL.md` gives ([106 to 109](SKILL.md?plain=1#L106-L109)) | `dist/server.js:35-93`, `:872` |
-| 33 tools in five groups ([119 to 176](SKILL.md?plain=1#L119-L176)) | The same 33 names that 0.2.5 returns from `tools/list` | run |
-| Desktop control needs the Codmir desktop app ([160](SKILL.md?plain=1#L160)) | 0.2.5 finds the app through `~/.codmir/agent-port`, and answers `Codmir desktop agent not found. Is the app running?` without it | `dist/server.js:100`, `:127` |
-| `com.codmir/mcp` in the MCP Registry ([13](SKILL.md?plain=1#L13)) | Listed, at version 0.2.3, while npm has 0.2.5 | [the registry's API](https://registry.modelcontextprotocol.io/v0/servers?search=com.codmir/mcp) |
-| Only a local server, signed in with a token ([9 to 186](SKILL.md?plain=1#L9-L186)) | Codmir also runs a hosted connector at `https://mcp.codmir.com/`. You sign in with OAuth in the browser, so there is no token to paste and nothing runs on your machine. The steps for Claude are below | `curl`: 401 until you sign in |
+| Run the server with `"command": "npx", "args": ["@codmir/mcp"]` ([27 to 28](SKILL.md?plain=1#L27-L28), [52 to 53](SKILL.md?plain=1#L52-L53), [71 to 72](SKILL.md?plain=1#L71-L72), [86 to 87](SKILL.md?plain=1#L86-L87), [101 to 102](SKILL.md?plain=1#L101-L102)) | This starts 0.2.5. The package has one command, `codmir-mcp`, and [`npm exec`](https://docs.npmjs.com/cli/v9/commands/npm-exec) runs a package's only command. Started both ways, `npx @codmir/mcp` and `npx -y -p @codmir/mcp codmir-mcp` answered `initialize` and listed 33 tools. The second form, which the [codmir-labs/mcp](https://github.com/codmir-labs/mcp) README uses, names the command, so it does not depend on the package having only one | `package.json:32-34`, run |
+| `codmir login` writes `~/.codmir/credentials.json`, and "Not authenticated" means run it ([38](SKILL.md?plain=1#L38), [112](SKILL.md?plain=1#L112), [117 to 121](SKILL.md?plain=1#L117-L121), [190](SKILL.md?plain=1#L190)) | 0.2.5 has no `codmir` command, and its own messages say `Run "overseer login"`. It reads `~/.codmir/credentials.json` first, then `CODMIR_API_TOKEN` and `CODMIR_USER_ID`, with `CODMIR_API_URL` defaulting to `https://codmir.com`: the order `SKILL.md` gives ([110 to 113](SKILL.md?plain=1#L110-L113)) | `dist/server.js:35-93`, `:872` |
+| 33 tools in five groups ([123 to 180](SKILL.md?plain=1#L123-L180)) | The same 33 names that 0.2.5 returns from `tools/list` | run |
+| Desktop control needs the Codmir desktop app ([164](SKILL.md?plain=1#L164)) | 0.2.5 finds the app through `~/.codmir/agent-port`, and answers `Codmir desktop agent not found. Is the app running?` without it | `dist/server.js:100`, `:127` |
+| `com.codmir/mcp` in the MCP Registry ([17](SKILL.md?plain=1#L17)) | Listed, at version 0.2.3, while npm has 0.2.5 | [the registry's API](https://registry.modelcontextprotocol.io/v0/servers?search=com.codmir/mcp) |
+| Only a local server, signed in with a token ([13 to 190](SKILL.md?plain=1#L13-L190)) | Codmir also runs a hosted connector at `https://mcp.codmir.com/`. You sign in with OAuth in the browser, so there is no token to paste and nothing runs on your machine. The steps for Claude are below | `curl`: 401 until you sign in |
 
 To use the hosted connector from Claude:
 
@@ -513,12 +506,12 @@ To use the hosted connector from Claude:
 
 | Client | `SKILL.md` writes | The client's documentation says |
 | --- | --- | --- |
-| Claude Code | `.claude/mcp.json`, or `~/.claude/mcp.json` ([17](SKILL.md?plain=1#L17)) | A project's servers go in `.mcp.json` at the project root, and local and user servers in `~/.claude.json`; `claude mcp add` writes them. `.claude/mcp.json` is not one of the places it lists. [Claude Code MCP](https://code.claude.com/docs/en/mcp) |
-| Claude Desktop | `claude_desktop_config.json` at three paths ([40 to 42](SKILL.md?plain=1#L40-L42)) | The same three paths, for macOS, Windows and Linux. [Connect to local MCP servers](https://modelcontextprotocol.io/docs/develop/connect-local-servers) |
-| Windsurf | `.windsurf/mcp.json` ([61](SKILL.md?plain=1#L61)) | Devin Local reads `.devin/mcp_config.json` in the project and `~/.config/devin/mcp_config.json` for the user, and Cascade reads `~/.config/devin/mcp_config.json` (`%AppData%/devin/mcp_config.json` on Windows). `.windsurf/mcp.json` is not among them. [Devin Local customizations](https://docs.devin.ai/desktop/devin-local/customizations), [Cascade MCP](https://docs.devin.ai/windsurf/plugins/cascade/mcp) |
-| Cursor | `.cursor/mcp.json` ([76](SKILL.md?plain=1#L76)) | The same file for one project, and `~/.cursor/mcp.json` for every project. [Cursor MCP](https://cursor.com/docs/mcp) |
-| VS Code | `.vscode/mcp.json`, under `mcpServers` ([91 to 100](SKILL.md?plain=1#L91-L100)) | `.vscode/mcp.json` belongs to the deprecated editor-managed format, whose top-level key is `servers`, not `mcpServers`. For Copilot, put the `mcpServers` block in `.mcp.json` at the workspace root or in `~/.copilot/mcp-config.json`. [VS Code MCP configuration](https://code.visualstudio.com/docs/agents/reference/mcp-configuration) |
-| GitHub Copilot | Nothing: it is named on [line 4](SKILL.md?plain=1#L4) and has no MCP section | |
+| Claude Code | `.claude/mcp.json`, or `~/.claude/mcp.json` ([21](SKILL.md?plain=1#L21)) | A project's servers go in `.mcp.json` at the project root, and local and user servers in `~/.claude.json`; `claude mcp add` writes them. `.claude/mcp.json` is not one of the places it lists. [Claude Code MCP](https://code.claude.com/docs/en/mcp) |
+| Claude Desktop | `claude_desktop_config.json` at three paths ([44 to 46](SKILL.md?plain=1#L44-L46)) | The same three paths, for macOS, Windows and Linux. [Connect to local MCP servers](https://modelcontextprotocol.io/docs/develop/connect-local-servers) |
+| Windsurf | `.windsurf/mcp.json` ([65](SKILL.md?plain=1#L65)) | Devin Local reads `.devin/mcp_config.json` in the project and `~/.config/devin/mcp_config.json` for the user, and Cascade reads `~/.config/devin/mcp_config.json` (`%AppData%/devin/mcp_config.json` on Windows). `.windsurf/mcp.json` is not among them. [Devin Local customizations](https://docs.devin.ai/desktop/devin-local/customizations), [Cascade MCP](https://docs.devin.ai/windsurf/plugins/cascade/mcp) |
+| Cursor | `.cursor/mcp.json` ([80](SKILL.md?plain=1#L80)) | The same file for one project, and `~/.cursor/mcp.json` for every project. [Cursor MCP](https://cursor.com/docs/mcp) |
+| VS Code | `.vscode/mcp.json`, under `mcpServers` ([95 to 104](SKILL.md?plain=1#L95-L104)) | `.vscode/mcp.json` belongs to the deprecated editor-managed format, whose top-level key is `servers`, not `mcpServers`. For Copilot, put the `mcpServers` block in `.mcp.json` at the workspace root or in `~/.copilot/mcp-config.json`. [VS Code MCP configuration](https://code.visualstudio.com/docs/agents/reference/mcp-configuration) |
+| GitHub Copilot | Nothing: it is named on [line 8](SKILL.md?plain=1#L8) and has no MCP section | |
 
 ## FAQ
 
@@ -541,7 +534,7 @@ errors; the SDK sends your app's errors to Codmir. Ask the agent for the one you
 <details>
 <summary><b>Which version of the SDK do the instructions target?</b></summary>
 
-`SKILL.md`'s version table says 1.x ([line 1050](SKILL.md?plain=1#L1050)), but `npm install @codmir/sdk` installs the
+`SKILL.md`'s version table says 1.x ([line 1054](SKILL.md?plain=1#L1054)), but `npm install @codmir/sdk` installs the
 latest release, which was 2.0.1 on 2026-11-23. Check yours with `npm view @codmir/sdk version`, and see
 [Check before you run it](#the-sdk-against-codmirsdk-201) for what differs on 2.0.1.
 
@@ -582,7 +575,7 @@ In [GitHub Issues](https://github.com/codmir-labs/skill/issues).
 
 | Path | What it holds |
 | --- | --- |
-| [`SKILL.md`](SKILL.md) | The skill: 1,050 lines, no frontmatter |
+| [`SKILL.md`](SKILL.md) | The skill: 1,054 lines, starting with its frontmatter |
 | [`src/index.ts`](src/index.ts) | The library's functions and types, and the summary `getFullSkill()` returns |
 | [`src/instructions.ts`](src/instructions.ts) | The nine sets of framework instructions, and the maps from id to instructions, name, import path and test snippet |
 | [`package.json`](package.json) | `@codmir/skill` 0.1.0: the tsup build, and the exports `.` and `./instructions` |
@@ -598,13 +591,15 @@ In [GitHub Issues](https://github.com/codmir-labs/skill/issues).
   they differ, as the [note above](#the-sdk-framework-by-framework) explains.
 - Build with `npm install` and `npm run build`, then try the result with a script like the one under
   [Build it from source](#build-it-from-source).
-- A skill's frontmatter goes on the first lines of `SKILL.md`: `name`, 1 to 64 lowercase letters, numbers and hyphens,
+- The frontmatter stays on the first lines of `SKILL.md`: `name`, 1 to 64 lowercase letters, numbers and hyphens,
   equal to the folder name, and `description`, saying what the skill does and when to use it. Validate a skill folder
   with `skills-ref`, the reference library the [specification](https://agentskills.io/specification) points to;
-  version 0.1.1 installs its command as `agentskills`:
+  version 0.1.1 installs its command as `agentskills`. It checks that `name` matches the folder, so validate a copy in
+  a folder named `codmir`:
 
   ```bash
   pip install skills-ref
+  mkdir -p codmir && cp SKILL.md codmir/
   agentskills validate codmir
   ```
 
