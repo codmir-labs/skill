@@ -1,3 +1,7 @@
+---
+name: codmir
+description: Connects an AI client to the Codmir MCP server and installs @codmir/sdk in a project. Use when asked to set up Codmir, its MCP tools, or Codmir error tracking and monitoring.
+---
 # Codmir Skill
 
 > AI-readable instructions for installing and configuring Codmir.
