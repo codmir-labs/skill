@@ -404,12 +404,12 @@ returned, as JSON.
 <!-- api:start -->
 | Export | Signature | Example | Returns |
 | --- | --- | --- | --- |
-| [`getInstallInstructions`](src/index.ts#L134-L146) | `(framework: string): string` | `getInstallInstructions(" Express ").split("\n")[0]` | `"# Codmir SDK -- Express.js Integration"` |
-| [`getSupportedFrameworks`](src/index.ts#L160-L162) | `(): FrameworkId[]` | `getSupportedFrameworks().length` | `7` |
-| [`getFrameworkList`](src/index.ts#L175-L181) | `(): FrameworkInfo[]` | `getFrameworkList()[3]` | `{"id":"express","name":"Express.js","importPath":"@codmir/sdk/express"}` |
-| [`getFullSkill`](src/index.ts#L198-L200) | `(): string` | `getFullSkill().split("\n")[0]` | `"# Codmir SDK Installation Skill"` |
-| [`getVerificationCode`](src/index.ts#L221-L233) | `(framework: string): string` | `getVerificationCode("express").split("\n")[1]` | `"Codmir.init({ dsn: process.env.CODMIR_DSN });"` |
-| [`getImportPath`](src/index.ts#L248-L260) | `(framework: string): string` | `getImportPath("remix")` | `"@codmir/sdk/remix"` |
+| [`getInstallInstructions`](src/index.ts#L132-L144) | `(framework: string): string` | `getInstallInstructions(" Express ").split("\n")[0]` | `"# Codmir SDK -- Express.js Integration"` |
+| [`getSupportedFrameworks`](src/index.ts#L158-L160) | `(): FrameworkId[]` | `getSupportedFrameworks().length` | `7` |
+| [`getFrameworkList`](src/index.ts#L173-L179) | `(): FrameworkInfo[]` | `getFrameworkList()[3]` | `{"id":"express","name":"Express.js","importPath":"@codmir/sdk/express"}` |
+| [`getFullSkill`](src/index.ts#L196-L198) | `(): string` | `getFullSkill().split("\n")[0]` | `"# Codmir SDK Installation Skill"` |
+| [`getVerificationCode`](src/index.ts#L219-L231) | `(framework: string): string` | `getVerificationCode("express").split("\n")[1]` | `"Codmir.init({ dsn: process.env.CODMIR_DSN });"` |
+| [`getImportPath`](src/index.ts#L246-L258) | `(framework: string): string` | `getImportPath("remix")` | `"@codmir/sdk/remix"` |
 | [`NEXTJS_INSTRUCTIONS`](src/instructions.ts#L208-L226) | `string` | `NEXTJS_INSTRUCTIONS.split("\n")[0]` | `"# Codmir SDK -- Next.js Integration"` |
 | [`NEXTJS_APP_ROUTER_INSTRUCTIONS`](src/instructions.ts#L15-L134) | `string` | `NEXTJS_APP_ROUTER_INSTRUCTIONS.split("\n")[0]` | `"## Next.js App Router Setup"` |
 | [`NEXTJS_PAGES_ROUTER_INSTRUCTIONS`](src/instructions.ts#L136-L205) | `string` | `NEXTJS_PAGES_ROUTER_INSTRUCTIONS.split("\n")[0]` | `"## Next.js Pages Router Setup"` |
@@ -423,7 +423,7 @@ returned, as JSON.
 | [`FRAMEWORK_VERIFICATION`](src/instructions.ts#L612-L643) | `Record<string, string>` | `FRAMEWORK_VERIFICATION.express.split("\n")[0]` | `"import * as Codmir from '@codmir/sdk/express';"` |
 <!-- api:end -->
 
-And two types, for TypeScript ([lines 94 to 113](src/index.ts#L94-L113)):
+And two types, for TypeScript ([lines 92 to 111](src/index.ts#L92-L111)):
 
 <!-- snippet: types -->
 ```ts
@@ -438,7 +438,7 @@ for one they do not know. `getImportPath("vue")` throws `Unsupported framework: 
 the seven ids, separated by commas.
 
 > [!WARNING]
-> `getFullSkill()` does not return `SKILL.md`. It returns `SKILL_MD_CONTENT` ([`src/index.ts` lines 36 to 84](src/index.ts#L36-L84)),
+> `getFullSkill()` does not return `SKILL.md`. It returns `SKILL_MD_CONTENT` ([`src/index.ts` lines 36 to 82](src/index.ts#L36-L82)),
 > a 48-line summary titled `# Codmir SDK Installation Skill`, which uses a DSN and has no MCP part. A comment above it
 > says it is embedded at build time; it is a string written into the source, and the build reads no Markdown file.
 > The instruction sets the library returns use a DSN too; the [note above](#the-sdk-framework-by-framework) explains.
