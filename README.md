@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-171717?style=for-the-badge"></a>
-  <a href="#the-sdk-framework-by-framework"><img alt="9 frameworks in src/instructions.ts" src="https://img.shields.io/badge/frameworks-9-171717?style=for-the-badge"></a>
+  <a href="#the-sdk-framework-by-framework"><img alt="7 frameworks in src/instructions.ts" src="https://img.shields.io/badge/frameworks-7-171717?style=for-the-badge"></a>
 </p>
 
 <p align="center">
@@ -278,27 +278,25 @@ to-do list?" ([lines 182 to 190](SKILL.md?plain=1#L182-L190)). Which of these fi
 
 ### The SDK, framework by framework
 
-The library's nine framework ids, named in `FRAMEWORK_NAMES` ([`src/instructions.ts` lines 790 to 800](src/instructions.ts#L790-L800)),
+The library's seven framework ids, named in `FRAMEWORK_NAMES` ([`src/instructions.ts` lines 590 to 598](src/instructions.ts#L590-L598)),
 what each set of instructions has the agent write and where, and the matching section of `SKILL.md`. In every set the
 first step is `npm install @codmir/sdk`.
 
 | Framework | Id and import | What the instructions write, and where | `src/instructions.ts` | `SKILL.md` |
 | --- | --- | --- | --- | --- |
-| Next.js | `nextjs`, `@codmir/sdk/nextjs` | Both Next.js sets below, after a rule for choosing: an `app/` directory means the App Router, `pages/` the Pages Router, and both the App Router | [208 to 226](src/instructions.ts#L208-L226) | [235 to 310](SKILL.md?plain=1#L235-L310) |
-| Next.js (App Router) | `nextjs-app-router`, `@codmir/sdk/nextjs` | `instrumentation.ts` next to `next.config.js`, calling `Codmir.init` in `register()` and exporting `onRequestError`; `app/global-error.tsx` and `app/error.tsx` calling `Codmir.captureException`; `experimental.instrumentationHook` in `next.config.js`; the DSN in `.env.local` | [15 to 134](src/instructions.ts#L15-L134) | [235 to 290](SKILL.md?plain=1#L235-L290) |
-| Next.js (Pages Router) | `nextjs-pages-router`, `@codmir/sdk/nextjs` | `Codmir.init` in `pages/_app.tsx`; `pages/_error.tsx` capturing the error and calling `Codmir.flush(2000)`; the DSN in `.env.local` | [136 to 205](src/instructions.ts#L136-L205) | [294 to 310](SKILL.md?plain=1#L294-L310) |
-| Express.js | `express`, `@codmir/sdk/express` | In `src/app.ts`: `Codmir.init` before the app is created, `requestHandler()` as the first middleware, `tracingHandler()`, and `errorHandler()` after the routes | [232 to 307](src/instructions.ts#L232-L307) | [314 to 375](SKILL.md?plain=1#L314-L375) |
-| Remix | `remix`, `@codmir/sdk/remix` | `Codmir.init` and `export const handleError` in `app/entry.server.tsx`; `wrapLoader` and `wrapAction` in route files; an `ErrorBoundary` in `app/root.tsx` | [313 to 406](src/instructions.ts#L313-L406) | [379 to 438](SKILL.md?plain=1#L379-L438) |
-| React Native | `react-native`, `@codmir/sdk/react-native` | `Codmir.init` in `App.tsx`, the app wrapped in `Codmir.ErrorBoundary`; a navigation breadcrumb in `onStateChange`; `captureException` in async code | [412 to 499](src/instructions.ts#L412-L499) | [442 to 521](SKILL.md?plain=1#L442-L521) |
-| Browser (Vanilla JS) | `browser`, `@codmir/sdk/browser` | `Codmir.init` in `src/main.ts` for a bundled app, or in an inline module script, with the DSN in a Vite, Create React App or Webpack variable | [505 to 572](src/instructions.ts#L505-L572) | [525 to 581](SKILL.md?plain=1#L525-L581) |
-| Serverless (Lambda / Workers) | `serverless`, `@codmir/sdk/serverless` | An AWS Lambda handler and a Cloudflare Workers `fetch` handler built with `createApp` and `createFunction`, and a decorator-style alternative that makes the app with the `App` method of a `codmir` export and wraps the handler with `fn` | [578 to 666](src/instructions.ts#L578-L666) | [585 to 664](SKILL.md?plain=1#L585-L664) |
-| AI Monitoring (OpenAI / Anthropic) | `ai-monitor`, `@codmir/sdk/ai` | In `src/ai-client.ts`: `CodmirAI.init`, `wrapOpenAI` and `wrapAnthropic` around the clients, `trackAICall` for other providers, and `getAIUsageSummary` | [672 to 770](src/instructions.ts#L672-L770) | [668 to 761](SKILL.md?plain=1#L668-L761) |
+| Next.js | `nextjs`, `@codmir/sdk/nextjs` | Both Next.js sets below, after a rule for choosing: an `app/` directory means the App Router, `pages/` the Pages Router, and both the App Router | [208 to 226](src/instructions.ts#L208-L226) | [233 to 308](SKILL.md?plain=1#L233-L308) |
+| Next.js (App Router) | `nextjs-app-router`, `@codmir/sdk/nextjs` | `instrumentation.ts` next to `next.config.js`, calling `Codmir.init` in `register()` and exporting `onRequestError`; `app/global-error.tsx` and `app/error.tsx` calling `Codmir.captureException`; `experimental.instrumentationHook` in `next.config.js`; the DSN in `.env.local` | [15 to 134](src/instructions.ts#L15-L134) | [233 to 288](SKILL.md?plain=1#L233-L288) |
+| Next.js (Pages Router) | `nextjs-pages-router`, `@codmir/sdk/nextjs` | `Codmir.init` in `pages/_app.tsx`; `pages/_error.tsx` capturing the error and calling `Codmir.flush(2000)`; the DSN in `.env.local` | [136 to 205](src/instructions.ts#L136-L205) | [292 to 308](SKILL.md?plain=1#L292-L308) |
+| Express.js | `express`, `@codmir/sdk/express` | In `src/app.ts`: `Codmir.init` before the app is created, `requestHandler()` as the first middleware, `tracingHandler()`, and `errorHandler()` after the routes | [232 to 307](src/instructions.ts#L232-L307) | [312 to 373](SKILL.md?plain=1#L312-L373) |
+| Remix | `remix`, `@codmir/sdk/remix` | `Codmir.init` and `export const handleError` in `app/entry.server.tsx`; `wrapLoader` and `wrapAction` in route files; an `ErrorBoundary` in `app/root.tsx` | [313 to 406](src/instructions.ts#L313-L406) | [377 to 436](SKILL.md?plain=1#L377-L436) |
+| React Native | `react-native`, `@codmir/sdk/react-native` | `Codmir.init` in `App.tsx`, the app wrapped in `Codmir.ErrorBoundary`; a navigation breadcrumb in `onStateChange`; `captureException` in async code | [412 to 499](src/instructions.ts#L412-L499) | [440 to 519](SKILL.md?plain=1#L440-L519) |
+| Browser (Vanilla JS) | `browser`, `@codmir/sdk/browser` | `Codmir.init` in `src/main.ts` for a bundled app, or in an inline module script, with the DSN in a Vite, Create React App or Webpack variable | [505 to 572](src/instructions.ts#L505-L572) | [523 to 579](SKILL.md?plain=1#L523-L579) |
 
 > [!NOTE]
 > The library and `SKILL.md` set the SDK up two different ways. `src/instructions.ts` came with the repository's first
 > commit, [`b2e7f0f`](https://github.com/codmir-labs/skill/commit/b2e7f0f), and has not changed since. Where it calls
 > `init`, it passes a `dsn`: a variable such as `CODMIR_DSN` or `NEXT_PUBLIC_CODMIR_DSN`, or, in the React Native and
-> some browser snippets, the URL itself. Its serverless set calls no `init`. `SKILL.md` moved to a `clientKey` and a
+> some browser snippets, the URL itself. `SKILL.md` moved to a `clientKey` and a
 > `secretKey` in
 > [`0fc0ce5`](https://github.com/codmir-labs/skill/commit/0fc0ce5), which changed no file in `src/`, and now passes
 > only the `clientKey`, with a `dsn` as well in its browser and React Native snippets. Unlike the library's sets, it
@@ -328,7 +326,7 @@ flowchart LR
         C5 --> A
         A["Credentials: codmir login,<br/>or CODMIR_API_TOKEN<br/>and CODMIR_USER_ID"] --> V1["Restart the client, ask:<br/>What's on my to-do list?"]
     end
-    subgraph SDK ["SDK: SKILL.md lines 194 to 967"]
+    subgraph SDK ["SDK: SKILL.md lines 194 to 785"]
         S1["Client Key<br/>from Project Settings,<br/>SDK Setup"] --> S2["npm install @codmir/sdk"]
         S2 --> S3{"Which<br/>framework?"}
         S3 -- "Next.js App Router" --> F1["instrumentation.ts:<br/>register and<br/>onRequestError"]
@@ -337,16 +335,12 @@ flowchart LR
         S3 -- "Remix" --> F4["entry.server.tsx,<br/>wrapLoader, wrapAction"]
         S3 -- "React Native" --> F5["App.tsx: init and<br/>createErrorBoundary"]
         S3 -- "Browser" --> F6["init with a dsn, in a module<br/>script or src/main.ts"]
-        S3 -- "Serverless" --> F7["a handler built<br/>with fn"]
-        S3 -- "AI monitoring" --> F8["wrapOpenAI,<br/>wrapAnthropic"]
         F1 --> E
         F2 --> E
         F3 --> E
         F4 --> E
         F5 --> E
         F6 --> E
-        F7 --> E
-        F8 --> E
         E["The client key in<br/>environment variables"] --> S5["verify(), or captureMessage<br/>and flush"]
         S5 --> D[("Dashboard: Connected in<br/>Project Settings, SDK Status")]
     end
@@ -391,7 +385,7 @@ Then, in an ES module:
 import { getSupportedFrameworks, getImportPath, getInstallInstructions } from "@codmir/skill";
 
 console.log(getSupportedFrameworks().join(" "));
-// nextjs nextjs-app-router nextjs-pages-router express remix react-native browser serverless ai-monitor
+// nextjs nextjs-app-router nextjs-pages-router express remix react-native browser
 console.log(getImportPath("express"));
 // @codmir/sdk/express
 console.log(getInstallInstructions("express").split("\n")[0]);
@@ -410,12 +404,12 @@ returned, as JSON.
 <!-- api:start -->
 | Export | Signature | Example | Returns |
 | --- | --- | --- | --- |
-| [`getInstallInstructions`](src/index.ts#L136-L148) | `(framework: string): string` | `getInstallInstructions(" Express ").split("\n")[0]` | `"# Codmir SDK -- Express.js Integration"` |
-| [`getSupportedFrameworks`](src/index.ts#L162-L164) | `(): FrameworkId[]` | `getSupportedFrameworks().length` | `9` |
-| [`getFrameworkList`](src/index.ts#L177-L183) | `(): FrameworkInfo[]` | `getFrameworkList()[3]` | `{"id":"express","name":"Express.js","importPath":"@codmir/sdk/express"}` |
-| [`getFullSkill`](src/index.ts#L200-L202) | `(): string` | `getFullSkill().split("\n")[0]` | `"# Codmir SDK Installation Skill"` |
-| [`getVerificationCode`](src/index.ts#L223-L235) | `(framework: string): string` | `getVerificationCode("express").split("\n")[1]` | `"Codmir.init({ dsn: process.env.CODMIR_DSN });"` |
-| [`getImportPath`](src/index.ts#L250-L262) | `(framework: string): string` | `getImportPath("ai-monitor")` | `"@codmir/sdk/ai"` |
+| [`getInstallInstructions`](src/index.ts#L132-L144) | `(framework: string): string` | `getInstallInstructions(" Express ").split("\n")[0]` | `"# Codmir SDK -- Express.js Integration"` |
+| [`getSupportedFrameworks`](src/index.ts#L158-L160) | `(): FrameworkId[]` | `getSupportedFrameworks().length` | `7` |
+| [`getFrameworkList`](src/index.ts#L173-L179) | `(): FrameworkInfo[]` | `getFrameworkList()[3]` | `{"id":"express","name":"Express.js","importPath":"@codmir/sdk/express"}` |
+| [`getFullSkill`](src/index.ts#L196-L198) | `(): string` | `getFullSkill().split("\n")[0]` | `"# Codmir SDK Installation Skill"` |
+| [`getVerificationCode`](src/index.ts#L219-L231) | `(framework: string): string` | `getVerificationCode("express").split("\n")[1]` | `"Codmir.init({ dsn: process.env.CODMIR_DSN });"` |
+| [`getImportPath`](src/index.ts#L246-L258) | `(framework: string): string` | `getImportPath("remix")` | `"@codmir/sdk/remix"` |
 | [`NEXTJS_INSTRUCTIONS`](src/instructions.ts#L208-L226) | `string` | `NEXTJS_INSTRUCTIONS.split("\n")[0]` | `"# Codmir SDK -- Next.js Integration"` |
 | [`NEXTJS_APP_ROUTER_INSTRUCTIONS`](src/instructions.ts#L15-L134) | `string` | `NEXTJS_APP_ROUTER_INSTRUCTIONS.split("\n")[0]` | `"## Next.js App Router Setup"` |
 | [`NEXTJS_PAGES_ROUTER_INSTRUCTIONS`](src/instructions.ts#L136-L205) | `string` | `NEXTJS_PAGES_ROUTER_INSTRUCTIONS.split("\n")[0]` | `"## Next.js Pages Router Setup"` |
@@ -423,34 +417,31 @@ returned, as JSON.
 | [`REMIX_INSTRUCTIONS`](src/instructions.ts#L313-L406) | `string` | `REMIX_INSTRUCTIONS.split("\n")[0]` | `"# Codmir SDK -- Remix Integration"` |
 | [`REACT_NATIVE_INSTRUCTIONS`](src/instructions.ts#L412-L499) | `string` | `REACT_NATIVE_INSTRUCTIONS.split("\n")[0]` | `"# Codmir SDK -- React Native Integration"` |
 | [`BROWSER_INSTRUCTIONS`](src/instructions.ts#L505-L572) | `string` | `BROWSER_INSTRUCTIONS.split("\n")[0]` | `"# Codmir SDK -- Browser Integration"` |
-| [`SERVERLESS_INSTRUCTIONS`](src/instructions.ts#L578-L666) | `string` | `SERVERLESS_INSTRUCTIONS.split("\n")[0]` | `"# Codmir SDK -- Serverless Integration"` |
-| [`AI_MONITOR_INSTRUCTIONS`](src/instructions.ts#L672-L770) | `string` | `AI_MONITOR_INSTRUCTIONS.split("\n")[0]` | `"# Codmir SDK -- AI Monitoring Integration"` |
-| [`FRAMEWORK_INSTRUCTIONS`](src/instructions.ts#L777-L787) | `Record<string, string>` | `FRAMEWORK_INSTRUCTIONS.remix === REMIX_INSTRUCTIONS` | `true` |
-| [`FRAMEWORK_NAMES`](src/instructions.ts#L790-L800) | `Record<string, string>` | `FRAMEWORK_NAMES["ai-monitor"]` | `"AI Monitoring (OpenAI / Anthropic)"` |
-| [`FRAMEWORK_IMPORTS`](src/instructions.ts#L803-L813) | `Record<string, string>` | `FRAMEWORK_IMPORTS.browser` | `"@codmir/sdk/browser"` |
-| [`FRAMEWORK_VERIFICATION`](src/instructions.ts#L816-L855) | `Record<string, string>` | `FRAMEWORK_VERIFICATION.serverless.split("\n")[0]` | `"import { createApp } from '@codmir/sdk/serverless';"` |
+| [`FRAMEWORK_INSTRUCTIONS`](src/instructions.ts#L579-L587) | `Record<string, string>` | `FRAMEWORK_INSTRUCTIONS.remix === REMIX_INSTRUCTIONS` | `true` |
+| [`FRAMEWORK_NAMES`](src/instructions.ts#L590-L598) | `Record<string, string>` | `FRAMEWORK_NAMES.remix` | `"Remix"` |
+| [`FRAMEWORK_IMPORTS`](src/instructions.ts#L601-L609) | `Record<string, string>` | `FRAMEWORK_IMPORTS.browser` | `"@codmir/sdk/browser"` |
+| [`FRAMEWORK_VERIFICATION`](src/instructions.ts#L612-L643) | `Record<string, string>` | `FRAMEWORK_VERIFICATION.express.split("\n")[0]` | `"import * as Codmir from '@codmir/sdk/express';"` |
 <!-- api:end -->
 
-And two types, for TypeScript ([lines 94 to 115](src/index.ts#L94-L115)):
+And two types, for TypeScript ([lines 92 to 111](src/index.ts#L92-L111)):
 
 <!-- snippet: types -->
 ```ts
 import { getFrameworkList, type FrameworkId, type FrameworkInfo } from "@codmir/skill";
 
-const id: FrameworkId = "remix"; // one of the nine ids above
+const id: FrameworkId = "remix"; // one of the seven ids above
 const info: FrameworkInfo = getFrameworkList()[4]; // { id, name, importPath }
 ```
 
 `getInstallInstructions`, `getVerificationCode` and `getImportPath` trim the id and lower-case it, and throw an `Error`
 for one they do not know. `getImportPath("vue")` throws `Unsupported framework: "vue". Supported frameworks:`, then
-the nine ids, separated by commas.
+the seven ids, separated by commas.
 
 > [!WARNING]
-> `getFullSkill()` does not return `SKILL.md`. It returns `SKILL_MD_CONTENT` ([`src/index.ts` lines 36 to 84](src/index.ts#L36-L84)),
+> `getFullSkill()` does not return `SKILL.md`. It returns `SKILL_MD_CONTENT` ([`src/index.ts` lines 36 to 82](src/index.ts#L36-L82)),
 > a 48-line summary titled `# Codmir SDK Installation Skill`, which uses a DSN and has no MCP part. A comment above it
 > says it is embedded at build time; it is a string written into the source, and the build reads no Markdown file.
-> The instruction sets the library returns use a DSN too, except the serverless one, which sets neither a DSN nor a
-> key; the [note above](#the-sdk-framework-by-framework) explains.
+> The instruction sets the library returns use a DSN too; the [note above](#the-sdk-framework-by-framework) explains.
 
 ## Check before you run it
 
@@ -463,28 +454,23 @@ others were read from it. Line numbers in the third column are in the package's 
 | `SKILL.md` or `src/instructions.ts` tells the agent to | `@codmir/sdk` 2.0.1 | Source |
 | --- | --- | --- |
 | Wrap the app in `<Codmir.ErrorBoundary>` from `@codmir/sdk/react-native` (`src/instructions.ts` [439](src/instructions.ts#L439)) | The entry has no `ErrorBoundary` export, so `Codmir.ErrorBoundary` is `undefined`. It has `createErrorBoundary(React)`, which returns an error-boundary class that takes a `fallback` prop | `dist/react-native/index.js:82-109`, run |
-| `import { codmir, fn } from '@codmir/sdk/serverless'`, then make the app with its `App` method (`src/instructions.ts` [643](src/instructions.ts#L643), [645](src/instructions.ts#L645)) | There is no `codmir` export, and Node stops at the import: `The requested module '@codmir/sdk/serverless' does not provide an export named 'codmir'`. The entry has `app(config)` and `fn(app, config)` instead, and a function built with `fn(app, options)(handler)` ran | `dist/serverless/index.js:996-1001`, run |
-| `createFunction(app, options)(handler)` (`src/instructions.ts` [598](src/instructions.ts#L598), [624](src/instructions.ts#L624)) | `createFunction(app, config, handler)` takes the handler as a third argument and returns the function object, so the call throws `TypeError: createFunction(...) is not a function` | `dist/serverless/index.js:464-466`, run |
-| `export const handler = processEvent.local` (`src/instructions.ts` [611](src/instructions.ts#L611), [614](src/instructions.ts#L614)) | `local` and `remote` are methods that use `this`. Called on its own, `local` throws `TypeError: Cannot read properties of undefined (reading 'executionCount')`; `processEvent.local(event)` works | `dist/serverless/index.js:301-303`, run |
-| Import the SDK in a file that Next.js or Remix also builds for the browser: `app/global-error.tsx`, `app/error.tsx`, `pages/_app.tsx`, `pages/_error.tsx` or `app/root.tsx` (`src/instructions.ts` [49](src/instructions.ts#L49), [79](src/instructions.ts#L79), [149](src/instructions.ts#L149), [164](src/instructions.ts#L164), [373](src/instructions.ts#L373)), or at the top of `instrumentation.ts` ([29](src/instructions.ts#L29)), which Next.js also builds for the Edge runtime when the app has middleware | Every error-tracking entry imports Node's `events`, `crypto`, `fs`, `os` and `path`, through a chunk it shares with the package's agent code. `next build` (Next.js 15.5.29) failed on each of the four Next.js files with `Module not found: Can't resolve 'fs'`, and on the top-level import, next to a middleware file, with `Can't resolve 'crypto'`; `remix vite:build` (Remix 2.17.5) failed on `app/root.tsx` with `"EventEmitter" is not exported by "__vite-browser-external"`. `SKILL.md` keeps the SDK out of these files ([264 to 266](SKILL.md?plain=1#L264-L266), [302 to 304](SKILL.md?plain=1#L302-L304), [430 to 432](SKILL.md?plain=1#L430-L432)) and imports it in `instrumentation.ts` only when `NEXT_RUNTIME` is `nodejs` ([242 to 261](SKILL.md?plain=1#L242-L261)): with Next.js 15.5.29 and a middleware file, that built, and the server sent the error of a page that threw | `dist/chunk-6CRI34ER.js:267-268`, `dist/chunk-DYRMB7WS.js:2-3`, `:1559-1561`, run |
-| Bundle `@codmir/sdk/browser` into a page (`SKILL.md` [534 to 550](SKILL.md?plain=1#L534-L550) and [556 to 566](SKILL.md?plain=1#L556-L566), which [529](SKILL.md?plain=1#L529) warns do not build on 2.0.1; `src/instructions.ts` [523](src/instructions.ts#L523), [540](src/instructions.ts#L540)) | The same imports. esbuild with `--platform=browser` failed with `Could not resolve "events"` while the same bundle for Node built, and `vite build` (Vite 6.4.1) failed with `"EventEmitter" is not exported by "__vite-browser-external"` | `dist/chunk-6CRI34ER.js:267-268`, `dist/chunk-DYRMB7WS.js:1559-1561`, run |
-| Call `init` in a React Native app (`SKILL.md` [463 to 467](SKILL.md?plain=1#L463-L467), which [446](SKILL.md?plain=1#L446) warns throws on 2.0.1; `src/instructions.ts` [429](src/instructions.ts#L429)) | `init` reads `window.location.origin` for its default endpoint before it looks at the `dsn`. React Native makes `window` the global object and defines no `location`, so with React Native's globals `init` threw `TypeError: Cannot read properties of undefined (reading 'origin')`, with a `dsn` and without one | `dist/chunk-6CRI34ER.js:1146`, `Libraries/Core/setUpGlobals.js` in React Native 0.72.17 and 0.88.1, run |
-| Leave the secret key out of `init` ([207](SKILL.md?plain=1#L207), [799](SKILL.md?plain=1#L799)) | `init` stores a `secretKey` and nothing reads it: the request that sends an event does not contain it | `dist/chunk-6CRI34ER.js:1150`, run |
-| Pass a `dsn` to the browser `init` ([527](SKILL.md?plain=1#L527), [539](SKILL.md?plain=1#L539), [560](SKILL.md?plain=1#L560)) | Given a key and no `dsn`, `init` picks the endpoint: `https://codmir.com/api/overseer` in Node, but `/api/overseer` on the page's own origin in a browser, so these events go to `/api/overseer/ingest` on your own site. With the `dsn` line, both snippets, run in a stub page, sent their events to `https://codmir.com/api/overseer/ingest` | `dist/chunk-6CRI34ER.js:1145-1148`, `:1338`, run |
+| Import the SDK in a file that Next.js or Remix also builds for the browser: `app/global-error.tsx`, `app/error.tsx`, `pages/_app.tsx`, `pages/_error.tsx` or `app/root.tsx` (`src/instructions.ts` [49](src/instructions.ts#L49), [79](src/instructions.ts#L79), [149](src/instructions.ts#L149), [164](src/instructions.ts#L164), [373](src/instructions.ts#L373)), or at the top of `instrumentation.ts` ([29](src/instructions.ts#L29)), which Next.js also builds for the Edge runtime when the app has middleware | Every error-tracking entry imports Node's `events`, `crypto`, `fs`, `os` and `path`, through a chunk it shares with the package's agent code. `next build` (Next.js 15.5.29) failed on each of the four Next.js files with `Module not found: Can't resolve 'fs'`, and on the top-level import, next to a middleware file, with `Can't resolve 'crypto'`; `remix vite:build` (Remix 2.17.5) failed on `app/root.tsx` with `"EventEmitter" is not exported by "__vite-browser-external"`. `SKILL.md` keeps the SDK out of these files ([262 to 264](SKILL.md?plain=1#L262-L264), [300 to 302](SKILL.md?plain=1#L300-L302), [428 to 430](SKILL.md?plain=1#L428-L430)) and imports it in `instrumentation.ts` only when `NEXT_RUNTIME` is `nodejs` ([240 to 259](SKILL.md?plain=1#L240-L259)): with Next.js 15.5.29 and a middleware file, that built, and the server sent the error of a page that threw | `dist/chunk-6CRI34ER.js:267-268`, `dist/chunk-DYRMB7WS.js:2-3`, `:1559-1561`, run |
+| Bundle `@codmir/sdk/browser` into a page (`SKILL.md` [532 to 548](SKILL.md?plain=1#L532-L548) and [554 to 564](SKILL.md?plain=1#L554-L564), which [527](SKILL.md?plain=1#L527) warns do not build on 2.0.1; `src/instructions.ts` [523](src/instructions.ts#L523), [540](src/instructions.ts#L540)) | The same imports. esbuild with `--platform=browser` failed with `Could not resolve "events"` while the same bundle for Node built, and `vite build` (Vite 6.4.1) failed with `"EventEmitter" is not exported by "__vite-browser-external"` | `dist/chunk-6CRI34ER.js:267-268`, `dist/chunk-DYRMB7WS.js:1559-1561`, run |
+| Call `init` in a React Native app (`SKILL.md` [461 to 465](SKILL.md?plain=1#L461-L465), which [444](SKILL.md?plain=1#L444) warns throws on 2.0.1; `src/instructions.ts` [429](src/instructions.ts#L429)) | `init` reads `window.location.origin` for its default endpoint before it looks at the `dsn`. React Native makes `window` the global object and defines no `location`, so with React Native's globals `init` threw `TypeError: Cannot read properties of undefined (reading 'origin')`, with a `dsn` and without one | `dist/chunk-6CRI34ER.js:1146`, `Libraries/Core/setUpGlobals.js` in React Native 0.72.17 and 0.88.1, run |
+| Leave the secret key out of `init` ([205](SKILL.md?plain=1#L205), [623](SKILL.md?plain=1#L623)) | `init` stores a `secretKey` and nothing reads it: the request that sends an event does not contain it | `dist/chunk-6CRI34ER.js:1150`, run |
+| Pass a `dsn` to the browser `init` ([525](SKILL.md?plain=1#L525), [537](SKILL.md?plain=1#L537), [558](SKILL.md?plain=1#L558)) | Given a key and no `dsn`, `init` picks the endpoint: `https://codmir.com/api/overseer` in Node, but `/api/overseer` on the page's own origin in a browser, so these events go to `/api/overseer/ingest` on your own site. With the `dsn` line, both snippets, run in a stub page, sent their events to `https://codmir.com/api/overseer/ingest` | `dist/chunk-6CRI34ER.js:1145-1148`, `:1338`, run |
 | Set `tracesSampleRate`, `replaysSessionSampleRate` and `replaysOnErrorSampleRate` (`src/instructions.ts` [35 to 37](src/instructions.ts#L35-L37), [336](src/instructions.ts#L336)) | `init` stores the three numbers and no other line of the package reads them | `dist/chunk-6CRI34ER.js:1157-1159` |
 | Set `captureNativeCrashes`, `trackScreenViews` and `trackAppState` (`src/instructions.ts` [432 to 434](src/instructions.ts#L432-L434)) | `init` takes the three options and no other line reads them. The global error handler that `init` installs after the core client starts does not depend on them; in React Native the core client does not start on 2.0.1 (the `init` row above) | `dist/react-native/index.js:21-23`, `:27-40` |
-| Confirm the setup with `verify()` or `quickVerify()`, then find the test event in the dashboard ([809](SKILL.md?plain=1#L809), [822](SKILL.md?plain=1#L822)) | Both report success whatever the server says. `quickVerify` returned `true` when the server answered 401, and `verify()` returned `success: true` when the request failed: the request's status is never read, a failed flush is reported as a success, and the last step always reports `Connection verified`. `quickVerify` also treats its argument as a key only when it starts with `osk_` or `csk_`, and as a DSN otherwise | `dist/verify/index.js:63-91`, `:93-95`, `dist/chunk-6CRI34ER.js:1285-1296`, `:1346-1350`, run |
-| Read `totalTokens`, `callCount` and `errorCount` from `getAIUsageSummary()` (`src/instructions.ts` [752](src/instructions.ts#L752)) | It returns `totalCalls`, `totalInputTokens`, `totalOutputTokens`, `totalCost`, `avgLatencyMs`, `byProvider` and `byModel` | `dist/ai/index.js:326-335`, run |
-| Call `close()` to stop the flush timer and send queued events ([779](SKILL.md?plain=1#L779)) | `close()` stops the timer and flushes, and leaves the SDK on: `captureException` after it still returned an event id | `dist/chunk-6CRI34ER.js:1297-1302`, run |
-| Write each snippet as TypeScript (`.ts`, `.tsx`), with the declaration file `SKILL.md` adds ([222 to 227](SKILL.md?plain=1#L222-L227)) | The package ships no `.d.ts` file although `types` names `./dist/index.d.ts`, so with `strict` on, `tsc` fails at the import with `TS7016: Could not find a declaration file for module '@codmir/sdk/nextjs'`. With `declare module '@codmir/sdk/*';` in a file that `tsconfig.json` includes, the same imports type-check | `package.json:8`, tsc 5.9.3, run |
+| Confirm the setup with `verify()` or `quickVerify()`, then find the test event in the dashboard ([633](SKILL.md?plain=1#L633), [646](SKILL.md?plain=1#L646)) | Both report success whatever the server says. `quickVerify` returned `true` when the server answered 401, and `verify()` returned `success: true` when the request failed: the request's status is never read, a failed flush is reported as a success, and the last step always reports `Connection verified`. `quickVerify` also treats its argument as a key only when it starts with `osk_` or `csk_`, and as a DSN otherwise | `dist/verify/index.js:63-91`, `:93-95`, `dist/chunk-6CRI34ER.js:1285-1296`, `:1346-1350`, run |
+| Call `close()` to stop the flush timer and send queued events ([603](SKILL.md?plain=1#L603)) | `close()` stops the timer and flushes, and leaves the SDK on: `captureException` after it still returned an event id | `dist/chunk-6CRI34ER.js:1297-1302`, run |
+| Write each snippet as TypeScript (`.ts`, `.tsx`), with the declaration file `SKILL.md` adds ([220 to 225](SKILL.md?plain=1#L220-L225)) | The package ships no `.d.ts` file although `types` names `./dist/index.d.ts`, so with `strict` on, `tsc` fails at the import with `TS7016: Could not find a declaration file for module '@codmir/sdk/nextjs'`. With `declare module '@codmir/sdk/*';` in a file that `tsconfig.json` includes, the same imports type-check | `package.json:8`, tsc 5.9.3, run |
 
 What matches 2.0.1, under the names `SKILL.md` uses: `npm install @codmir/sdk`; the Next.js functions (`init` and
 `captureRouterError`, imported in `instrumentation.ts` only on Node.js, and `captureMessage` and `flush` in its test
 snippet); the Express middleware (`requestHandler`, `tracingHandler`, `errorHandler`) and its `extractUser` option; the
 Remix helpers (`handleError`, `wrapLoader`, `wrapAction`); `createErrorBoundary` and `addBreadcrumb` in React Native;
 the browser options (`captureGlobalErrors`, `captureUnhandledRejections`, `captureConsoleErrors`, `trackClicks`);
-`app` and `fn` from `@codmir/sdk/serverless`, with `local()` called on the function; the AI functions (`wrapOpenAI`,
-`wrapAnthropic`, `trackAICall`, `getAIUsageSummary`); `isOverseerInitialized` in the framework entries; and `verify`,
+`isOverseerInitialized` in the framework entries; and `verify`,
 `quickVerify` and `printVerifyResult`, with the caveat above. Every snippet that runs in Node ran, with its requests
 caught before they left the process. For the others, every name a snippet uses was checked against its entry's
 exports, the Next.js and Remix steps were built with `next build` (Next.js 15.5.29 and 14.2.35) and `remix vite:build`
@@ -541,7 +527,7 @@ errors; the SDK sends your app's errors to Codmir. Ask the agent for the one you
 <details>
 <summary><b>Which version of the SDK do the instructions target?</b></summary>
 
-`@codmir/sdk` 2.0.1, which `SKILL.md`'s version table names ([line 967](SKILL.md?plain=1#L967)) and which was the
+`@codmir/sdk` 2.0.1, which `SKILL.md`'s version table names ([line 785](SKILL.md?plain=1#L785)) and which was the
 latest release on 2026-11-23: `npm install @codmir/sdk` installs the latest. Check yours with
 `npm view @codmir/sdk version`, and see [Check before you run it](#the-sdk-against-codmirsdk-201) for what does not work
 on 2.0.1.
@@ -585,7 +571,7 @@ In [GitHub Issues](https://github.com/codmir-labs/skill/issues).
 | --- | --- |
 | [`SKILL.md`](SKILL.md) | The skill: 967 lines, starting with its frontmatter |
 | [`src/index.ts`](src/index.ts) | The library's functions and types, and the summary `getFullSkill()` returns |
-| [`src/instructions.ts`](src/instructions.ts) | The nine sets of framework instructions, and the maps from id to instructions, name, import path and test snippet |
+| [`src/instructions.ts`](src/instructions.ts) | The seven sets of framework instructions, and the maps from id to instructions, name, import path and test snippet |
 | [`package.json`](package.json) | `@codmir/skill` 0.1.0: the tsup build, and the exports `.` and `./instructions` |
 | [`tsconfig.json`](tsconfig.json) | TypeScript settings: strict, ES2022, declarations on |
 | [`.gitignore`](.gitignore) | Ignores `node_modules/`, `dist/`, `*.tgz` and `.DS_Store` |

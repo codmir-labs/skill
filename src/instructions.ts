@@ -572,204 +572,6 @@ Codmir.captureMessage('Browser SDK setup complete', 'info');
 `.trim();
 
 // =============================================================================
-// Serverless (AWS Lambda / Cloudflare Workers)
-// =============================================================================
-
-export const SERVERLESS_INSTRUCTIONS = `
-# Codmir SDK -- Serverless Integration
-
-Import: \`@codmir/sdk/serverless\`
-
-### Step 1: Install the SDK
-
-\`\`\`bash
-npm install @codmir/sdk
-\`\`\`
-
-### Step 2: Wrap your handler function
-
-**AWS Lambda**
-
-\`\`\`typescript
-import { createApp, createFunction } from '@codmir/sdk/serverless';
-
-const app = createApp({ name: 'my-lambda-service' });
-
-const processEvent = createFunction(app, {
-  cpu: 1,
-  memory: '512MB',
-  timeout: 30,
-})(async (event: AWSLambdaEvent) => {
-  const result = await processData(event.body);
-  return {
-    statusCode: 200,
-    body: JSON.stringify(result),
-  };
-});
-
-// Local development
-export const handler = processEvent.local;
-
-// Cloud execution
-export const cloudHandler = processEvent.remote;
-\`\`\`
-
-**Cloudflare Workers**
-
-\`\`\`typescript
-import { createApp, createFunction } from '@codmir/sdk/serverless';
-
-const app = createApp({ name: 'my-worker' });
-
-const handleRequest = createFunction(app, {
-  cpu: 1,
-  memory: '128MB',
-  timeout: 30,
-})(async (request: Request) => {
-  const data = await processRequest(request);
-  return new Response(JSON.stringify(data), { status: 200 });
-});
-
-export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
-    return handleRequest.local(request);
-  },
-};
-\`\`\`
-
-**Using decorators (Modal-like API)**
-
-\`\`\`typescript
-import { codmir, fn } from '@codmir/sdk/serverless';
-
-const app = codmir.App({ name: 'my-service' });
-
-const compute = fn(app, {
-  cpu: 2,
-  memory: '4GB',
-  timeout: 300,
-})(async (data: string) => {
-  return processedResult;
-});
-
-// Local: const result = await compute.local('test');
-// Cloud: const result = await compute.remote('real data');
-\`\`\`
-
-### Verification
-
-\`\`\`typescript
-import { createApp } from '@codmir/sdk/serverless';
-const app = createApp({ name: 'test-app' });
-console.log('Serverless SDK initialized:', app);
-\`\`\`
-`.trim();
-
-// =============================================================================
-// AI Monitoring (OpenAI / Anthropic)
-// =============================================================================
-
-export const AI_MONITOR_INSTRUCTIONS = `
-# Codmir SDK -- AI Monitoring Integration
-
-Import: \`@codmir/sdk/ai\`
-
-Monitors AI/LLM API calls for errors, token usage, costs, and latency.
-
-### Step 1: Install the SDK
-
-\`\`\`bash
-npm install @codmir/sdk
-\`\`\`
-
-### Step 2: Initialize AI monitoring
-
-File: \`src/ai-client.ts\` (or wherever you configure AI clients)
-
-\`\`\`typescript
-import * as CodmirAI from '@codmir/sdk/ai';
-import OpenAI from 'openai';
-import Anthropic from '@anthropic-ai/sdk';
-
-CodmirAI.init({
-  dsn: process.env.CODMIR_DSN,
-  environment: process.env.NODE_ENV,
-  trackTokenUsage: true,
-  trackCosts: true,
-  trackLatency: true,
-  capturePrompts: false,    // Set true to capture prompts (privacy-sensitive)
-  captureResponses: false,  // Set true to capture responses (privacy-sensitive)
-  redactPatterns: [
-    /sk-[a-zA-Z0-9]+/g,       // Redact API keys
-    /\\b\\d{3}-\\d{2}-\\d{4}\\b/g, // Redact SSNs
-  ],
-});
-\`\`\`
-
-### Step 3: Wrap your AI clients
-
-\`\`\`typescript
-// Wrap OpenAI -- all calls automatically tracked
-const openai = CodmirAI.wrapOpenAI(new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-}));
-
-// Wrap Anthropic -- all calls automatically tracked
-const anthropic = CodmirAI.wrapAnthropic(new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-}));
-
-// Use them normally
-const completion = await openai.chat.completions.create({
-  model: 'gpt-4o',
-  messages: [{ role: 'user', content: 'Hello!' }],
-});
-
-const message = await anthropic.messages.create({
-  model: 'claude-sonnet-4-20250514',
-  max_tokens: 1024,
-  messages: [{ role: 'user', content: 'Hello!' }],
-});
-\`\`\`
-
-### Step 4: Track custom AI providers
-
-\`\`\`typescript
-const result = await CodmirAI.trackAICall(
-  'custom-provider',
-  { model: 'my-model', inputTokens: 100 },
-  async () => {
-    return await myCustomProvider.generate('Hello');
-  }
-);
-\`\`\`
-
-### Step 5: Get usage summary
-
-\`\`\`typescript
-const summary = CodmirAI.getAIUsageSummary();
-console.log(summary);
-// { totalTokens, totalCost, callCount, errorCount, avgLatencyMs, byModel }
-\`\`\`
-
-### Environment variables
-
-\`\`\`env
-CODMIR_DSN=https://your-project.codmir.com/api/overseer
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-\`\`\`
-
-### Verification
-
-\`\`\`typescript
-import * as CodmirAI from '@codmir/sdk/ai';
-CodmirAI.init({ dsn: process.env.CODMIR_DSN, trackTokenUsage: true });
-CodmirAI.captureMessage('AI monitoring SDK setup complete', 'info');
-\`\`\`
-`.trim();
-
-// =============================================================================
 // Framework registry
 // =============================================================================
 
@@ -782,8 +584,6 @@ export const FRAMEWORK_INSTRUCTIONS: Record<string, string> = {
   remix: REMIX_INSTRUCTIONS,
   "react-native": REACT_NATIVE_INSTRUCTIONS,
   browser: BROWSER_INSTRUCTIONS,
-  serverless: SERVERLESS_INSTRUCTIONS,
-  "ai-monitor": AI_MONITOR_INSTRUCTIONS,
 };
 
 /** Human-readable framework names */
@@ -795,8 +595,6 @@ export const FRAMEWORK_NAMES: Record<string, string> = {
   remix: "Remix",
   "react-native": "React Native",
   browser: "Browser (Vanilla JS)",
-  serverless: "Serverless (Lambda / Workers)",
-  "ai-monitor": "AI Monitoring (OpenAI / Anthropic)",
 };
 
 /** SDK import paths per framework */
@@ -808,8 +606,6 @@ export const FRAMEWORK_IMPORTS: Record<string, string> = {
   remix: "@codmir/sdk/remix",
   "react-native": "@codmir/sdk/react-native",
   browser: "@codmir/sdk/browser",
-  serverless: "@codmir/sdk/serverless",
-  "ai-monitor": "@codmir/sdk/ai",
 };
 
 /** Verification code snippets per framework */
@@ -844,12 +640,4 @@ Codmir.captureMessage('React Native SDK setup complete', 'info');`,
   browser: `import * as Codmir from '@codmir/sdk/browser';
 Codmir.init({ dsn: 'https://your-project.codmir.com/api/overseer' });
 Codmir.captureMessage('Browser SDK setup complete', 'info');`,
-
-  serverless: `import { createApp } from '@codmir/sdk/serverless';
-const app = createApp({ name: 'test-app' });
-console.log('Serverless SDK initialized:', app);`,
-
-  "ai-monitor": `import * as CodmirAI from '@codmir/sdk/ai';
-CodmirAI.init({ dsn: process.env.CODMIR_DSN, trackTokenUsage: true });
-CodmirAI.captureMessage('AI monitoring SDK setup complete', 'info');`,
 };

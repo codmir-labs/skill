@@ -1,0 +1,27 @@
+{
+  "package": "@codmir/sdk",
+  "version": "2.2.0",
+  "commit": "8e49682",
+  "exports": [
+    ".",
+    "./browser",
+    "./client",
+    "./express",
+    "./feedback",
+    "./hono",
+    "./logs",
+    "./logs/node",
+    "./logs/parse",
+    "./nextjs",
+    "./nextjs/server",
+    "./overseer",
+    "./react-native",
+    "./remix",
+    "./remix/server",
+    "./replay",
+    "./report",
+    "./tracing",
+    "./types",
+    "./verify"
+  ]
+}

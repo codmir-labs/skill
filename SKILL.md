@@ -193,12 +193,10 @@ If you get "Not authenticated", run `codmir login` in a terminal.
 
 ## SDK (Error Tracking & Monitoring)
 
-The `@codmir/sdk` package captures errors and messages with breadcrumbs, monitors AI API calls (OpenAI, Anthropic, etc.), and sends the events to Codmir. It provides framework-specific integrations for Next.js, Express, Remix, React Native and browser-only apps, and a runtime for serverless functions. These steps were checked against `@codmir/sdk` 2.0.1, the latest release on npm on 2026-11-23.
+The `@codmir/sdk` package captures errors and messages with breadcrumbs and sends the events to Codmir. It provides framework-specific integrations for Next.js, Express, Remix, React Native and browser-only apps. For serverless functions, use the `overseer` entry. These steps were checked against `@codmir/sdk` 2.0.1, the latest release on npm on 2026-11-23.
 
 Key capabilities:
 - **Error tracking** with stack traces, breadcrumbs, and user context
-- **AI monitoring** for tracking LLM token usage, estimated costs, and latency
-- **Serverless functions** that wrap a handler and run it with `local()`
 
 ### Prerequisites
 
@@ -582,189 +580,15 @@ REACT_APP_CODMIR_CLIENT_KEY=your_client_key_here
 
 ---
 
-### Serverless (AWS Lambda / Cloudflare Workers)
+### Serverless functions
 
-`@codmir/sdk/serverless` turns a handler into a Codmir function. In 2.0.1 it captures no errors and sends no events: `local()` runs the handler in the same process, and `remote()` posts the call to the Codmir API at `CODMIR_API_URL` (default `https://codmir.com`) with `CODMIR_API_KEY`. No 2.0.1 function uploads the handler's code (`deploy()` only logs), so these examples call `local()`, and the Lambda example reports errors with `@codmir/sdk/overseer`.
-
-**AWS Lambda**
-
-```typescript
-// handler.ts
-import { app, fn } from '@codmir/sdk/serverless';
-import * as Codmir from '@codmir/sdk/overseer';
-
-Codmir.init({
-  clientKey: process.env.CODMIR_CLIENT_KEY,
-  environment: process.env.NODE_ENV,
-});
-
-const service = app({ name: 'my-lambda-service' });
-
-const processEvent = fn(service, {
-  cpu: 1,
-  memory: '512MB',
-  timeout: 30,
-})(async (event: AWSLambdaEvent) => {
-  // Your handler logic
-  const result = await processData(event.body);
-  return {
-    statusCode: 200,
-    body: JSON.stringify(result),
-  };
-});
-
-// local() reads `this`: call it on processEvent, never detached
-export const handler = async (event: AWSLambdaEvent) => {
-  try {
-    return await processEvent.local(event);
-  } catch (error) {
-    Codmir.captureException(error);
-    throw error;
-  } finally {
-    await Codmir.flush(); // send queued events before the handler returns
-  }
-};
-```
-
-**Cloudflare Workers**
-
-```typescript
-// src/index.ts
-import { app, fn } from '@codmir/sdk/serverless';
-
-const worker = app({ name: 'my-worker' });
-
-const handleRequest = fn(worker, {
-  cpu: 1,
-  memory: '128MB',
-  timeout: 30,
-})(async (request: Request) => {
-  try {
-    const data = await processRequest(request);
-    return new Response(JSON.stringify(data), { status: 200 });
-  } catch (error) {
-    return new Response('Internal Server Error', { status: 500 });
-  }
-});
-
-export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
-    return handleRequest.local(request);
-  },
-};
-```
-
-This Worker sends nothing to Codmir: `@codmir/sdk/serverless` captures no errors.
-
-**Environment variables**
-
-```env
-# Read by @codmir/sdk/overseer in the Lambda example
-CODMIR_CLIENT_KEY=your_client_key_here
-```
-
----
-
-### AI Monitoring (OpenAI / Anthropic)
-
-The AI monitoring integration wraps LLM client libraries to automatically track token usage, estimated costs, latency, and errors.
-
-**Step 1: Initialize AI monitoring**
-
-```typescript
-// src/ai-client.ts
-import * as CodmirAI from '@codmir/sdk/ai';
-import OpenAI from 'openai';
-import Anthropic from '@anthropic-ai/sdk';
-
-CodmirAI.init({
-  clientKey: process.env.CODMIR_CLIENT_KEY,
-  environment: process.env.NODE_ENV,
-  trackTokenUsage: true,
-  trackCosts: true,
-  trackLatency: true,
-  capturePrompts: false,    // Set true to add each call's model, message count, temperature and max tokens to its breadcrumb (not the messages)
-  captureResponses: false,  // Set true to capture responses (privacy-sensitive)
-  redactPatterns: [
-    /sk-[a-zA-Z0-9]+/g,       // Redact OpenAI API keys
-    /\b\d{3}-\d{2}-\d{4}\b/g, // Redact SSNs
-  ],
-});
-```
-
-**Step 2: Wrap your AI clients**
-
-```typescript
-// Wrap OpenAI -- all calls are now automatically tracked
-const openai = CodmirAI.wrapOpenAI(new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-}));
-
-// Wrap Anthropic -- all calls are now automatically tracked
-const anthropic = CodmirAI.wrapAnthropic(new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-}));
-
-// Use them normally -- tracking happens transparently
-const completion = await openai.chat.completions.create({
-  model: 'gpt-4o',
-  messages: [{ role: 'user', content: 'Hello!' }],
-});
-
-const message = await anthropic.messages.create({
-  model: 'claude-sonnet-4-20250514',
-  max_tokens: 1024,
-  messages: [{ role: 'user', content: 'Hello!' }],
-});
-```
-
-> **Note**: In 2.0.1 a successful call is recorded in this process and as a breadcrumb on later events; only a failed call is sent to Codmir, as an error event.
-
-**Step 3: Track custom AI providers**
-
-```typescript
-// For providers without a dedicated wrapper, use the generic tracker.
-// It reads token counts from the result's `usage` (input_tokens and output_tokens,
-// or prompt_tokens and completion_tokens).
-const result = await CodmirAI.trackAICall(
-  'custom-provider',
-  { model: 'my-model' },
-  async () => {
-    return await myCustomProvider.generate('Hello');
-  }
-);
-```
-
-**Step 4: Get usage summary**
-
-```typescript
-// View accumulated stats for the current session
-const summary = CodmirAI.getAIUsageSummary();
-console.log(summary);
-// {
-//   totalCalls: 42,
-//   totalInputTokens: 9800,
-//   totalOutputTokens: 5620,
-//   totalCost: 0.23,
-//   avgLatencyMs: 850,
-//   byProvider: { openai: { calls: 30, inputTokens: 7000, outputTokens: 4000, cost: 0.15, avgLatencyMs: 800, errors: 1 }, ... },
-//   byModel: { 'gpt-4o': { calls: 30, inputTokens: 7000, outputTokens: 4000, cost: 0.15, avgLatencyMs: 800, errors: 1 }, ... }
-// }
-```
-
-**Step 5: Add environment variables**
-
-```env
-CODMIR_CLIENT_KEY=your_client_key_here
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-```
+Error tracking in a serverless function (AWS Lambda, Cloudflare Workers) uses `@codmir/sdk/overseer`: call `Codmir.init` with your client key once, outside the handler, and `Codmir.captureException` in the handler's `catch`. Then `await Codmir.flush()` before the function returns. Events are sent about a second after the last capture, and a frozen function never gets that second.
 
 ---
 
 ## Core SDK API Reference
 
-The framework entries (`/nextjs`, `/express`, `/remix`, `/react-native`, `/browser`), `@codmir/sdk/ai` and `@codmir/sdk/overseer` export these functions, except where a row says otherwise. `@codmir/sdk/serverless` exports none of them.
+The framework entries (`/nextjs`, `/express`, `/remix`, `/react-native`, `/browser`) and `@codmir/sdk/overseer` export these functions, except where a row says otherwise.
 
 | Function | Description |
 |---|---|
@@ -935,10 +759,6 @@ VITE_CODMIR_CLIENT_KEY=your_client_key_here
 
 # Create React App
 REACT_APP_CODMIR_CLIENT_KEY=your_client_key_here
-
-# AI monitoring (provider keys -- only needed if using @codmir/sdk/ai)
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 ---
@@ -952,8 +772,6 @@ ANTHROPIC_API_KEY=sk-ant-...
 | Remix | `@codmir/sdk/remix` |
 | React Native | `@codmir/sdk/react-native` |
 | Browser (vanilla JS) | `@codmir/sdk/browser` |
-| Serverless (Lambda, Workers) | `@codmir/sdk/serverless` |
-| AI Monitoring (OpenAI, Anthropic) | `@codmir/sdk/ai` |
 | Verification | `@codmir/sdk/verify` |
 | Core (direct access) | `@codmir/sdk/overseer` |
 | API Client (project management) | `@codmir/sdk` |

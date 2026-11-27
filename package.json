@@ -12,6 +12,7 @@
   "files": ["dist", "README.md", "LICENSE", "SKILL.md"],
   "scripts": {
     "build": "tsup src/index.ts src/instructions.ts --format cjs,esm --dts --clean",
+    "test": "node scripts/check-sdk-entries.mjs",
     "prepublishOnly": "pnpm build"
   },
   "keywords": ["codmir", "sdk", "skill", "ai", "instructions", "claude", "cursor", "copilot"],
