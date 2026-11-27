@@ -256,10 +256,8 @@ import * as Codmir from '@codmir/sdk/express';
 Codmir.init({
   dsn: process.env.CODMIR_DSN,
   environment: process.env.NODE_ENV,
-  extractUser: (req) => ({
-    id: req.user?.id as string,
-    email: req.user?.email as string,
-  }),
+  // Events carry the user's id (and username); the email and other keys go only with sendDefaultPii: true.
+  extractUser: (req) => (req.user ? { id: req.user.id as string } : null),
 });
 
 const app = express();

@@ -332,10 +332,8 @@ import * as Codmir from '@codmir/sdk/express';
 Codmir.init({
   clientKey: process.env.CODMIR_CLIENT_KEY,
   environment: process.env.NODE_ENV,
-  extractUser: (req) => ({
-    id: req.user?.id as string,
-    email: req.user?.email as string,
-  }),
+  // Events carry the user's id (and username); the email and other keys go only with sendDefaultPii: true.
+  extractUser: (req) => (req.user ? { id: req.user.id as string } : null),
 });
 
 const app = express();
@@ -595,7 +593,7 @@ The framework entries (`/nextjs`, `/express`, `/remix`, `/react-native`, `/brows
 | `init(config)` | Initialize the SDK with your client key and options |
 | `captureException(error, context?)` | Manually capture an error |
 | `captureMessage(message, level?)` | Send a custom message event |
-| `setUser(user)` | Set user context (id, email, username) |
+| `setUser(user)` | Set user context: the id and username are sent; the email and other keys only with `sendDefaultPii: true` |
 | `setTag(key, value)` | Set a single tag on all future events (not in `/browser` or `/react-native`) |
 | `setTags(tags)` | Set multiple tags at once |
 | `addBreadcrumb(breadcrumb)` | Add a breadcrumb for debugging context |
