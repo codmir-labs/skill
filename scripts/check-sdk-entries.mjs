@@ -3,7 +3,7 @@
 // release it targets. The entries are listed in scripts/sdk-exports.json: update that file
 // (exports, version, commit) whenever the SDK's export map changes, then run `npm test`.
 import { readFileSync, readdirSync, statSync } from "node:fs";
-import { dirname, join, relative } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -14,13 +14,6 @@ const entries = new Set(spec.exports.map((key) => (key === "." ? "" : key.replac
 const files = ["SKILL.md", "README.md"];
 const dirs = ["docs", "src"];
 const textFile = /\.(md|ts|tsx|js|mjs|cjs|json|svg|txt)$/;
-
-// Known stale hits that another change removes. Each is a file and an entry, so a new
-// miss in the same file is still reported.
-const pending = [
-  { file: "src/index.ts", entry: "serverless" },
-  { file: "src/index.ts", entry: "ai" },
-];
 
 function walk(dir) {
   for (const name of readdirSync(join(root, dir))) {
@@ -43,7 +36,6 @@ for (const file of files) {
       const entry = (match[1] ?? "").replace(/\.+$/, "");
       checked++;
       if (entries.has(entry)) continue;
-      if (pending.some((p) => p.file === relative(root, join(root, file)) && p.entry === entry)) continue;
       console.log(`${file}:${i + 1}: @codmir/sdk/${entry} is not an entry of @codmir/sdk ${spec.version}`);
       misses++;
     }

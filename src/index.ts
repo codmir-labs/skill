@@ -58,8 +58,6 @@ Then use the framework-specific import:
 | Remix | \`@codmir/sdk/remix\` |
 | React Native | \`@codmir/sdk/react-native\` |
 | Browser (vanilla JS) | \`@codmir/sdk/browser\` |
-| Serverless (Lambda, Workers) | \`@codmir/sdk/serverless\` |
-| AI Monitoring (OpenAI, Anthropic) | \`@codmir/sdk/ai\` |
 
 ## Prerequisites
 
