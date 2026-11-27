@@ -98,9 +98,7 @@ export type FrameworkId =
   | "express"
   | "remix"
   | "react-native"
-  | "browser"
-  | "serverless"
-  | "ai-monitor";
+  | "browser";
 
 /**
  * Metadata about a supported framework.
@@ -156,7 +154,7 @@ export function getInstallInstructions(framework: string): string {
  * ```typescript
  * const frameworks = getSupportedFrameworks();
  * // ['nextjs', 'nextjs-app-router', 'nextjs-pages-router', 'express', 'remix',
- * //  'react-native', 'browser', 'serverless', 'ai-monitor']
+ * //  'react-native', 'browser']
  * ```
  */
 export function getSupportedFrameworks(): FrameworkId[] {
@@ -270,8 +268,6 @@ export {
   REMIX_INSTRUCTIONS,
   REACT_NATIVE_INSTRUCTIONS,
   BROWSER_INSTRUCTIONS,
-  SERVERLESS_INSTRUCTIONS,
-  AI_MONITOR_INSTRUCTIONS,
   FRAMEWORK_INSTRUCTIONS,
   FRAMEWORK_NAMES,
   FRAMEWORK_IMPORTS,
